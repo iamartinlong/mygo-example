@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"os"
@@ -18,6 +19,7 @@ type Todo struct {
 	ID        int64     `json:"id"`
 	Title     string    `json:"title"`
 	Done      bool      `json:"done"`
+	Due       string    `json:"due,omitempty"` // date as 2006-01-02, empty for none
 	CreatedAt time.Time `json:"createdAt"`
 }
 
@@ -73,6 +75,8 @@ func openStoreAt(path string) (*Todos, error) {
 }
 
 func loadStore(data []byte, t *Todos) error {
+	// Windows editors write a UTF-8 BOM, which json.Unmarshal rejects.
+	data = bytes.TrimPrefix(data, []byte("\xef\xbb\xbf"))
 	if b := data[0]; b == '[' { // v1: bare array
 		return json.Unmarshal(data, &t.items)
 	}
@@ -129,6 +133,19 @@ func (t *Todos) SetTitle(id int64, title string) error {
 	t.mu.Unlock()
 	t.Save()
 	return nil
+}
+
+// SetDue sets or clears a due date, as a 2006-01-02 date; empty clears it.
+func (t *Todos) SetDue(id int64, due string) {
+	t.mu.Lock()
+	i := slices.IndexFunc(t.items, func(it Todo) bool { return it.ID == id })
+	if i < 0 {
+		t.mu.Unlock()
+		return
+	}
+	t.items[i].Due = due
+	t.mu.Unlock()
+	t.Save()
 }
 
 // SetDone marks a todo done or not done.

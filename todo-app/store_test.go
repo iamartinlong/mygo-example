@@ -112,6 +112,60 @@ func TestSetTitle(t *testing.T) {
 	}
 }
 
+func TestSetDue(t *testing.T) {
+	s, path := openTestStore(t)
+	a, _ := s.Add("dated")
+
+	s.SetDue(a.ID, "2026-11-20")
+	if got := s.Snapshot()[0].Due; got != "2026-11-20" {
+		t.Fatalf("due = %q", got)
+	}
+	s.SetDue(a.ID, "")
+	if got := s.Snapshot()[0].Due; got != "" {
+		t.Fatalf("clear left %q", got)
+	}
+	s.SetDue(a.ID, "2026-11-21")
+	s.SetDue(999, "2026-11-22")
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var f struct {
+		Items []struct {
+			ID  int64  `json:"id"`
+			Due string `json:"due"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(data, &f); err != nil {
+		t.Fatal(err)
+	}
+	if len(f.Items) != 1 || f.Items[0].Due != "2026-11-21" {
+		t.Fatalf("saved dues wrong: %+v", f.Items)
+	}
+}
+
+func TestLoadStoreBOM(t *testing.T) {
+	s, path := openTestStore(t)
+	if _, err := s.Add("bom item"); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, append([]byte("\xef\xbb\xbf"), data...), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	reopened, err := openStoreAt(path)
+	if err != nil {
+		t.Fatalf("BOM data should load: %v", err)
+	}
+	if got := reopened.Snapshot(); len(got) != 1 || got[0].Title != "bom item" {
+		t.Fatalf("BOM load wrong: %+v", got)
+	}
+}
+
 func TestRemoveAndClearDone(t *testing.T) {
 	s, _ := openTestStore(t)
 	a, _ := s.Add("one")

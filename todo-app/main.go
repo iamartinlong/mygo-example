@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
@@ -20,6 +21,9 @@ type appState struct {
 	filter    int // 0 all, 1 active, 2 done
 	list      ui.ListState
 	selected  int // chosen row, -1 for none; EditableText in a row reads it
+	dueOpen   bool      // the due-date popover of the row dueFor is open
+	dueFor    int64     // todo whose due-date picker is open, 0 for none
+	dueDraft  time.Time // the date the open calendar edits
 	updateMsg string
 }
 
@@ -81,6 +85,7 @@ func (a *appState) view(c *ui.Context) {
 				} else if ui.EditableText(c.Key(fmt.Sprintf("title-%d", it.ID)), &title).Changed() {
 					a.store.SetTitle(it.ID, title)
 				}
+				a.dueUI(c, t, it)
 				if ui.Button(c.Key(fmt.Sprintf("del-%d", it.ID)), "✕").Label("Delete").Clicked() {
 					a.store.Remove(it.ID)
 				}
@@ -109,6 +114,59 @@ func (a *appState) view(c *ui.Context) {
 			}
 		})
 	})
+}
+
+// dueUI shows a todo's due date (red when overdue) and the picker button
+// whose popover holds a calendar. Choosing a day saves it at once.
+func (a *appState) dueUI(c *ui.Context, t *ui.Theme, it Todo) {
+	if d, ok := parseDue(it.Due); ok {
+		now := time.Now()
+		today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
+		txt := ui.Text(c, d.Format("01-02")).FontSize(12)
+		if !it.Done && d.Before(today) {
+			txt.TextColor(t.Danger)
+		} else {
+			txt.TextColor(t.TextMuted)
+		}
+	}
+	btn := ui.Button(c.Key(fmt.Sprintf("due-%d", it.ID)), "📅").Label("Due date")
+	if btn.Clicked() {
+		a.dueFor = it.ID
+		a.dueDraft, _ = parseDue(it.Due)
+		if a.dueDraft.IsZero() {
+			a.dueDraft = time.Now()
+		}
+		a.dueOpen = true
+	}
+	if !a.dueOpen || a.dueFor != it.ID {
+		return
+	}
+	ui.Popover(c, btn, &a.dueOpen, func() {
+		prev := a.dueDraft
+		ui.Calendar(c, &a.dueDraft)
+		if !a.dueDraft.Equal(prev) {
+			a.store.SetDue(it.ID, a.dueDraft.Format("2006-01-02"))
+			a.dueOpen = false
+		}
+		ui.Row(c).Padding(8, 0, 0, 0).Gap(8).Children(func() {
+			if ui.Button(c, "清除").Clicked() {
+				a.store.SetDue(it.ID, "")
+				a.dueOpen = false
+			}
+			if ui.PrimaryButton(c.Key("due-done"), "关闭").Clicked() {
+				a.dueOpen = false
+			}
+		})
+	})
+}
+
+// parseDue reads a stored due date as a local date.
+func parseDue(s string) (time.Time, bool) {
+	if s == "" {
+		return time.Time{}, false
+	}
+	d, err := time.ParseInLocation("2006-01-02", s, time.Local)
+	return d, err == nil
 }
 
 func (a *appState) add() {
