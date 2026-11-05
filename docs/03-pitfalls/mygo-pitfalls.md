@@ -60,7 +60,7 @@
 - **原因**：系统中文输入法把注入的字母当作拼音组词
 - **解法**：自动化验证一律走剪贴板：`Set-Clipboard` + `^v`，IME 不参与粘贴链路
 
-### 无 BOM UTF-8 之外的 JSON 载入失败
+### 带 BOM 的 JSON 载入失败
 
 - **现象**：`json.Unmarshal: invalid character '\ufeff'`，应用启动 log.Fatal
 - **原因**：Windows 记事本/PowerShell `Set-Content -Encoding UTF8` 写出的文件带 UTF-8 BOM
