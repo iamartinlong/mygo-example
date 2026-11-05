@@ -58,11 +58,16 @@ func run() error {
 		return fmt.Errorf("web build missing: %w", err)
 	}
 
-	// Loopback, an ephemeral port: the UI is the only intended client of the
-	// API; the mock gateway gets its stable endpoint in a later batch.
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	// Prefer the upstream default port so published mock URLs survive a
+	// restart; fall back to an ephemeral one when it is taken (mocks break,
+	// so the move is logged loudly).
+	ln, err := net.Listen("tcp", "127.0.0.1:5178")
 	if err != nil {
-		return fmt.Errorf("listen: %w", err)
+		ln, err = net.Listen("tcp", "127.0.0.1:0")
+		if err != nil {
+			return fmt.Errorf("listen: %w", err)
+		}
+		log.Warn("default port busy; mock URLs change this session", "error", err)
 	}
 	handler := server.New(st, log, server.Config{Addr: ln.Addr().String()}, assets)
 	srv := &http.Server{
