@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.0（未发布）
+
+- 行内重命名：Finder 式单击选中、停顿再单击编辑（ui.EditableText）
+- 到期日：行内日历 popover 选日即存，逾期标红，可清除
+- 多窗口同步：统计窗口随数据变更自动刷新（store.OnChange + Window.Update）
+- 存储读取容忍 UTF-8 BOM
+
 ## 0.2.1
 
 - 更新链路实测版本：验证从 0.2.0 应用内签名升级

@@ -6,6 +6,9 @@ mygo 原生 UI 模式的桌面 todo 应用：窗口由 Go 直接 GPU 绘制，�
 
 - 输入框添加待办（回车或 Add 按钮）
 - 复选框勾选完成，✕ 删除，Clear done 清除已完成
+- 行内重命名：非完成行标题单击选中、停顿后再单击进入编辑（Finder 式，`ui.EditableText`），Enter 保存、Escape 还原
+- 到期日：每行 📅 打开日历 popover（`ui.Popover` + `ui.Calendar`），选日即存，已存日期回显高亮；行内显示 `MM-DD`，逾期标红（`t.Danger`）
+- 多窗口同步：菜单 文件→统计窗口 打开第二个窗口显示统计，store 变更经 `OnChange` 回调 + `Window.Update` 自动刷新
 - All / Active / Done 分段筛选；页脚统计（总数 / active / done）
 - JSON 持久化，跨运行保留；完成项沉底
 - 单实例：再次启动把已运行的窗口还原并聚焦，自身退出（`RequestSingleInstanceLock` + `OnSecondInstance`，锁按应用名 + identifier 识别）
@@ -53,8 +56,8 @@ go run ./cmd/mygo build ../../todo-app
 
 ## 扩展方向
 
-- 编辑已有待办标题：`ui.TextInput` + `OnTextKey`（参考 docs/ui/editable-text.md）
-- 截止日期：docs/ui/calendar.md、date-input.md
-- 多窗口同步：`mygo.NewEvent[T]` 广播变更（官方 examples/todo 的 store.go 有完整范式）
+- ~~编辑已有待办标题~~ 已实现：`ui.EditableText`（注意：放进 `ui.List` 行内必须给 `ListState.Selected` 挂非 nil 指针，否则首帧 panic，见 pitfalls）
+- ~~截止日期~~ 已实现：`ui.Popover` + `ui.Calendar`；日期以 `2006-01-02` 字符串存储
+- ~~多窗口同步~~ 已实现：`store.OnChange` 回调 + `statsWin.Update(func(){})` 推帧（官方 examples/todo 用 `mygo.NewEvent[T]` 广播，是另一条路）
 - 菜单与快捷键：`app.SetMenu(mygo.NewMenu(...))`，见官方 examples/todo/main.go
 - 打包：mygo-cli（`go run ./cmd/mygo build`，在 _research/mygo 克隆内可用）

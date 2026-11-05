@@ -43,6 +43,29 @@
 
 ## UI 细节
 
+### `EditableText` 放进 `ui.List` 行内启动即崩
+
+- **现象**：列表行用 `ui.EditableText` 做行内重命名，应用一启动就 panic：`(*listFrame).chosen` nil pointer dereference（list.go:912）
+- **原因**：`chosen()` 在 `Selection == nil` 时无条件解引用 `*f.s.Selected`，而 `ui.List` 的 `ListState.Selected` 默认不设（nil）。`EditableText` 每帧都会调 `chosen` 判断"已选中的行才进入编辑"，所以崩在首帧
+- **解法**：给 `ListState` 挂一个选中指针并初始化 -1：
+  ```go
+  a := &appState{selected: -1}
+  a.list.Selected = &a.selected
+  ```
+- **附带认知**：编辑交互是 Finder 式——第一次单击只是选中，**停顿超过 500ms（renameDelay）后再单击**才进入编辑；连续双击永远只是选中
+
+### 行内编辑/点击坐标被 IME 劫持
+
+- **现象**：PowerShell SendKeys 注入 "first todo"，落盘的却是「过河拆桥和秋灰」之类的随机汉字
+- **原因**：系统中文输入法把注入的字母当作拼音组词
+- **解法**：自动化验证一律走剪贴板：`Set-Clipboard` + `^v`，IME 不参与粘贴链路
+
+### 无 BOM UTF-8 之外的 JSON 载入失败
+
+- **现象**：`json.Unmarshal: invalid character '\ufeff'`，应用启动 log.Fatal
+- **原因**：Windows 记事本/PowerShell `Set-Content -Encoding UTF8` 写出的文件带 UTF-8 BOM
+- **解法**：读盘后先剥 BOM：`data = bytes.TrimPrefix(data, []byte("\xef\xbb\xbf"))`
+
 ### 标题渲染两遍
 
 - **现象**：待办行显示 "456 456"
