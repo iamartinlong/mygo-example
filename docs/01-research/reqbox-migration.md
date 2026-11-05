@@ -102,8 +102,10 @@ mygo.NewWindow(mygo.WindowOptions{URL: "/"})
 更新链路接入方式：`mygo.Use(updater.Plugin)` 后台检查 + `updates.tagPrefix: "reqbox-v"`——**同仓库托管两个应用的关键**：reqbox-desktop 的发布走 `reqbox-v*` tag，不占 repo 的 latest，与 todo-app 的 `v*` 发布互不干扰（updates.md §41-48）。首个版本无 delta 属正常。
 
 两点如实记录：
-- 「安装后无更新弹窗」的验证是在 GitHub 匿名 API 限流耗尽（403, 0 remaining）时做的，无法区分「tagPrefix 隔离生效」和「检查失败静默」；隔离的完整 E2E 要等 `reqbox-v0.1.0` 发布后验证（届时 `mygo build -upload` 需要 GH_TOKEN，403 也会消失）。
+- ~~「安装后无更新弹窗」的验证是在 GitHub 匿名 API 限流耗尽时做的~~ **tagPrefix 隔离 E2E 已补验通过**（发布后）：干净限流窗口内启动安装版 0.1.0，`updater.json` 记录了 `lastCheck`（检查真实执行、配额充足），未弹任何更新窗——仓库 latest 是 todo-app 的 v0.3.1，updater 只认 `reqbox-v*`。
 - 安装器是 NSIS 系，静默参数 `/S`；Git Bash 会把 `/S` 路径转换成磁盘路径导致静默失败——必须 `MSYS_NO_PATHCONV=1`。
+
+发布记录：release id 434990438，tag `reqbox-v0.1.0`，5 个产物（tar.gz/安装器/install.ps1/SHA256SUMS/manifest，manifest 最后传），`draft=false` + `make_latest=false` 发布，仓库 latest 保持 todo 的 v0.3.1。发布坑：中文 release notes 经 Windows 命令行传 JSON 会被编码损坏（400 Problems parsing JSON）——必须 UTF-8 写文件 `--data-binary @file`。
 
 发布属外部动作，等用户开口再执行（draft release + manifest 最后传的次序照 todo-app 流程）。
 
