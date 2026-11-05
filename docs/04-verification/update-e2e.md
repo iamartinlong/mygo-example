@@ -25,6 +25,24 @@
 - 应用侧 UI 自己实现（菜单加速键 Ctrl+U + `mygo.Updater.Check/Install` + `App.Relaunch`），没用 updater 插件的现成窗口——插件窗口同样可用，为可自动化选了自绘
 - 运行时 `App.Version()` 由 `mygo build` 注入；`go build` dev 运行为空，需兜底显示
 
+## 第二轮：v0.3.0（2026-11-05）
+
+三批功能（行内重命名/到期日/多窗口同步）后的例行发版，验证链路可重复。
+
+| 环节 | 结果 |
+|---|---|
+| 版本号 0.2.1→0.3.0 提交推送 | ✅ `500257c` |
+| `mygo build` 签名构建 | ✅ exe 11.9MB、安装器 5.2MB；**自动生成两条 delta**（0.2.1→0.3.0 与 0.2.0→0.3.0，各 675KB） |
+| 烟测 | ✅ dev 运行页脚 v0.3.0，exe VersionInfo=0.3.0 |
+| GitHub release v0.3.0（REST API） | ✅ id 434833143，上传 tar.gz/安装器/双 delta/manifest，published + latest |
+| **v0.2.1→v0.3.0 应用内升级** | ✅ 675KB 增量包，页脚 v0.3.0，磁盘 exe VersionInfo=0.3.0 |
+
+第二轮自动化新坑（记录在 pitfalls 的验证方法之外，属升级自动化）：
+
+- **Ctrl+U 会被 Alt 态菜单栏吞掉**：用 keybd_event 的 Alt 置前台技巧后，菜单栏停留在「Alt 按下」状态，紧随的 `^u` 变成菜单导航。菜单项点击（文件→检查更新…）更可靠
+- **窗口 rect 可能错位**：多窗口/重启后 `Get-Process` 的 `MainWindowHandle` 不保证指向预期窗口，截到的是叠在上面的其他窗口。先 `SetForegroundWindow` 并核对 `GetForegroundWindow() -eq $handle` 再截
+- **无 BOM UTF-8 ps1 按 ANSI 解析**：脚本里写中文字符串会坏，中文正文用 base64 注入或存盘带 BOM
+
 ## 遗留
 
 - 增量包失败回退整包的路径未演练（代码里有，触发条件是本机安装被改动）
