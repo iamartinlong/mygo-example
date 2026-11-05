@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -14,10 +15,11 @@ import (
 
 // appState is the state the window shows.
 type appState struct {
-	store  *Todos
-	draft  string
-	filter int // 0 all, 1 active, 2 done
-	list   ui.ListState
+	store     *Todos
+	draft     string
+	filter    int // 0 all, 1 active, 2 done
+	list      ui.ListState
+	updateMsg string
 }
 
 // filtered returns the todos the filter shows, done last.
@@ -91,7 +93,15 @@ func (a *appState) view(c *ui.Context) {
 			total = "item"
 		}
 		ui.Row(c).Padding(8, 16, 16, 16).AlignItems(ui.Center).Children(func() {
-			ui.Textf(c, "%d %s", s.Total, total).FontSize(12).TextColor(t.TextMuted).Grow(1)
+			ver := mygo.App.Version()
+			if ver == "" {
+				ver = "dev"
+			}
+			if a.updateMsg != "" {
+				ui.Text(c, a.updateMsg).FontSize(11).TextColor(t.TextMuted).Grow(1)
+			} else {
+				ui.Textf(c, "%d %s · v%s", s.Total, total, ver).FontSize(12).TextColor(t.TextMuted).Grow(1)
+			}
 			if ui.Button(c.Key("clear"), "Clear done").Disabled(s.Done == 0).Clicked() {
 				a.store.ClearDone()
 			}
@@ -103,6 +113,33 @@ func (a *appState) add() {
 	if _, err := a.store.Add(a.draft); err == nil {
 		a.draft = ""
 	}
+}
+
+// checkUpdate checks, installs and relaunches, reporting progress into the
+// window. Runs in a goroutine; state changes go through win.Update so they
+// land on the main thread.
+func (a *appState) checkUpdate(win *mygo.Window) {
+	go func() {
+		ctx := context.Background()
+		set := func(msg string) {
+			win.Update(func() { a.updateMsg = msg })
+		}
+		up, err := mygo.Updater.Check(ctx)
+		if err != nil {
+			set("更新检查失败: " + err.Error())
+			return
+		}
+		if up == nil {
+			set("已是最新版本 v" + mygo.App.Version())
+			return
+		}
+		set("发现 v" + up.Version + "，下载安装中…")
+		if err := up.Install(ctx, nil); err != nil {
+			set("更新失败: " + err.Error())
+			return
+		}
+		mygo.App.Relaunch()
+	}()
 }
 
 // mainWin is the window a second instance's launch brings to the front.
@@ -124,6 +161,15 @@ func main() {
 		}
 	})
 	mygo.App.WhenReady(func() {
+		mygo.App.SetMenu(mygo.NewMenu([]*mygo.MenuItem{
+			{Label: "文件", Submenu: []*mygo.MenuItem{
+				{Label: "检查更新…", Accelerator: "CmdOrCtrl+U", Click: func(*mygo.MenuItem, *mygo.Window) {
+					a.checkUpdate(mainWin)
+				}},
+				mygo.Separator(),
+				{Role: mygo.RoleQuit},
+			}},
+		}))
 		mainWin = mygo.NewWindow(mygo.WindowOptions{
 			Title:   "Todos",
 			Width:   460,

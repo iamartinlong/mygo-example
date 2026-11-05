@@ -1,6 +1,10 @@
 {
   "name": "Todo Native",
   "identifier": "dev.martinlong.todo-native",
-  "version": "0.1.1",
-  "out": "build"
+  "version": "0.2.0",
+  "out": "build",
+  "updates": {
+    "publicKey": "eto8P3HMMfsJt8KLcHIyrodevonVH6y78H+Lg9jLg/s=",
+    "github": "iamartinlong/mygo-example"
+  }
 }
