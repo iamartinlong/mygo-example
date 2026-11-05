@@ -60,7 +60,7 @@ func (a *app) serveMock(w http.ResponseWriter, r *http.Request) {
 
 	opts := runner.DefaultOpts()
 	opts.Timeout = 60 * time.Second
-	vars := map[string]string{}
+	vars := a.resolveEnvVars()
 
 	// Query parameters override variables, but may not move the call to a
 	// host the owner did not configure - such callers lose the stored

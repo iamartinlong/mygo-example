@@ -35,10 +35,11 @@ func (a *app) send() {
 	req := a.editRequest()
 	name := a.edit.name
 	opts := a.runOpts()
+	vars := a.resolveEnvVars()
 	a.run.running = true
 	a.run.errText = ""
 	go func() {
-		resp, err := a.exec.Run(context.Background(), req, nil, opts)
+		resp, err := a.exec.Run(context.Background(), req, vars, opts)
 		errText := ""
 		if err != nil {
 			errText = err.Error()

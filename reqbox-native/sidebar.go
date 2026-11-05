@@ -86,6 +86,7 @@ func (a *app) refresh() {
 	a.rebuildRows()
 	a.hist, _ = a.st.ListHistory(a.filter, 100)
 	a.histSel = -1
+	a.loadEnvs()
 }
 
 func (a *app) applyPending() {
@@ -220,14 +221,7 @@ func (a *app) histRowView(c *ui.Context, p palette, i int) {
 	})
 }
 
-// envRow is the environment picker; its menu arrives with B8.
-func (a *app) envRow(c *ui.Context, p palette) {
-	ui.Row(c).Height(36).Padding(0, 12, 0, 12).Gap(8).
-		AlignItems(ui.Center).Children(func() {
-		ui.Text(c, "No environment").FontSize(12).Grow(1)
-		ui.Icon(c, iconChevronDown).TextColor(p.mutedFg.color())
-	})
-}
+// envRow lives in env.go with the rest of the environment UI.
 
 // pill is one of the Requests/History tabs; the web draws the active one
 // as a filled pill and the other as bare text with a count.

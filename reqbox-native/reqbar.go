@@ -9,6 +9,7 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
+	"reqbox-desktop/pkg/runner"
 	"reqbox-desktop/pkg/store"
 )
 
@@ -210,9 +211,16 @@ func (a *app) fullURLRow(c *ui.Context, p palette) {
 		}
 	})
 	if a.showFullURL {
-		ui.Row(c).Padding(2, 16, 8, 16).Children(func() {
-			ui.Text(c, fullURL(a.edit.url, a.edit.params)).FontSize(11).
+		raw := fullURL(a.edit.url, a.edit.params)
+		ui.Row(c).Padding(2, 16, 8, 16).Gap(8).Children(func() {
+			ui.Text(c, raw).FontSize(11).
 				Font("JetBrains Mono").SingleLine().TextColor(p.mutedFg.color())
+			if strings.Contains(raw, "{{") {
+				if res := runner.Resolve(raw, a.resolveEnvVars()); res != raw {
+					ui.Text(c, res).FontSize(11).Font("JetBrains Mono").
+						SingleLine().TextColor(p.ok.color())
+				}
+			}
 		})
 	}
 }

@@ -40,6 +40,14 @@ type app struct {
 	histSel    int
 	histOpenID string
 
+	envs        []store.Environment
+	activeEnv   string
+	envChoice   string
+	envMgr      bool
+	envEditID   string
+	envEditName string
+	envEditVars []envVarEdit
+
 	win      *mygo.Window
 	exec     *runner.Executor
 	run      runState
@@ -53,6 +61,7 @@ func (a *app) view(c *ui.Context) {
 	ui.Column(c).Fill().Children(func() {
 		a.topBar(c, p)
 		ui.Split(c, &a.sidebar, func() { a.sidebarPane(c, p) }, func() { a.mainPane(c, p) }).Fill()
+		a.envDialog(c, p)
 	})
 }
 
