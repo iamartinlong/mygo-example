@@ -12,16 +12,30 @@ type savedTodo struct {
 	Done bool `json:"done"`
 }
 
+func readItems(t *testing.T, path string) []savedTodo {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	var f storeFile
+	if err := json.Unmarshal(data, &f); err != nil {
+		return nil
+	}
+	out := make([]savedTodo, len(f.Items))
+	for i, it := range f.Items {
+		out[i] = savedTodo{Done: it.Done}
+	}
+	return out
+}
+
 func waitSaved(t *testing.T, path string, wantDone bool) {
 	t.Helper()
 	deadline := time.Now().Add(2 * time.Second)
 	for time.Now().Before(deadline) {
-		data, err := os.ReadFile(path)
-		if err == nil {
-			var got []savedTodo
-			if json.Unmarshal(data, &got) == nil && len(got) > 0 && got[0].Done == wantDone {
-				return
-			}
+		got := readItems(t, path)
+		if len(got) > 0 && got[0].Done == wantDone {
+			return
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
@@ -42,12 +56,9 @@ func waitEmpty(t *testing.T, path string) {
 	t.Helper()
 	deadline := time.Now().Add(2 * time.Second)
 	for time.Now().Before(deadline) {
-		data, err := os.ReadFile(path)
-		if err == nil {
-			var got []savedTodo
-			if json.Unmarshal(data, &got) == nil && len(got) == 0 {
-				return
-			}
+		got := readItems(t, path)
+		if len(got) == 0 {
+			return
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
@@ -100,4 +111,58 @@ func TestRemoveAndClearDone(t *testing.T) {
 		t.Fatalf("Stats wrong: %+v", st)
 	}
 	waitEmpty(t, s.path)
+}
+
+func TestV1Migration(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "todos.json")
+	v1 := `[{"id":1,"title":"legacy","done":true,"createdAt":"2026-01-01T00:00:00Z"}]`
+	if err := os.WriteFile(path, []byte(v1), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	s, err := openStoreAt(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := s.Snapshot()
+	if len(got) != 1 || got[0].Title != "legacy" || !got[0].Done {
+		t.Fatalf("v1 load wrong: %+v", got)
+	}
+	if _, err := s.Add("new"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Save is synchronous: the file is already the v2 envelope here.
+	var f storeFile
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(data, &f); err != nil {
+		t.Fatalf("saved file is not a v2 envelope: %v", err)
+	}
+	if f.Version != storeVersion || len(f.Items) != 2 {
+		t.Fatalf("envelope wrong: version=%d items=%d", f.Version, len(f.Items))
+	}
+}
+
+func TestFutureVersionRejected(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "todos.json")
+	fut := `{"version":99,"items":[{"id":1,"title":"x","done":false}]}`
+	if err := os.WriteFile(path, []byte(fut), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := openStoreAt(path); err == nil {
+		t.Fatal("a future version must be rejected, not silently downgraded")
+	}
+}
+
+func TestAtomicWriteLeavesNoTmp(t *testing.T) {
+	s, path := openTestStore(t)
+	if _, err := s.Add("one"); err != nil {
+		t.Fatal(err)
+	}
+	waitSaved(t, path, false)
+	if _, err := os.Stat(path + ".tmp"); !os.IsNotExist(err) {
+		t.Fatalf("tmp file left behind: %v", err)
+	}
 }

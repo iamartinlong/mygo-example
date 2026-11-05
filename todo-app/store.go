@@ -28,6 +28,16 @@ type Stats struct {
 	Done   int `json:"done"`
 }
 
+// storeVersion is the on-disk format version. Version 1 was a bare JSON
+// array of Todo; 2 wraps it in storeFile with the version field.
+const storeVersion = 2
+
+// storeFile is the versioned envelope of todos.json.
+type storeFile struct {
+	Version int    `json:"version"`
+	Items   []Todo `json:"items"`
+}
+
 // Todos stores the list as JSON in the user data directory.
 type Todos struct {
 	mu    sync.Mutex
@@ -52,7 +62,7 @@ func openStoreAt(path string) (*Todos, error) {
 		return nil, err
 	}
 	if len(data) > 0 {
-		if err := json.Unmarshal(data, &t.items); err != nil {
+		if err := loadStore(data, t); err != nil {
 			return nil, err
 		}
 	}
@@ -60,6 +70,21 @@ func openStoreAt(path string) (*Todos, error) {
 		t.next = max(t.next, it.ID)
 	}
 	return t, nil
+}
+
+func loadStore(data []byte, t *Todos) error {
+	if b := data[0]; b == '[' { // v1: bare array
+		return json.Unmarshal(data, &t.items)
+	}
+	var f storeFile
+	if err := json.Unmarshal(data, &f); err != nil {
+		return err
+	}
+	if f.Version > storeVersion {
+		return errors.New("todos.json was written by a newer app version")
+	}
+	t.items = f.Items
+	return nil
 }
 
 // Snapshot returns a copy of the list, done last.
@@ -140,15 +165,39 @@ func (t *Todos) Stats() Stats {
 
 // Save persists the list. Writes must not run concurrently: out-of-order
 // writes would let an older list overwrite a newer one, so this is
-// synchronous.
+// synchronous. The write is atomic (temp file + rename), so a crash mid
+// write leaves the previous file intact.
 func (t *Todos) Save() {
 	t.mu.Lock()
-	data, err := json.MarshalIndent(t.items, "", "  ")
+	data, err := json.MarshalIndent(storeFile{Version: storeVersion, Items: t.items}, "", "  ")
 	t.mu.Unlock()
 	if err != nil {
 		return
 	}
-	_ = os.WriteFile(t.path, data, 0o644)
+	t.atomicWrite(data)
+}
+
+func (t *Todos) atomicWrite(data []byte) {
+	tmp := t.path + ".tmp"
+	f, err := os.OpenFile(tmp, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
+	if err != nil {
+		return
+	}
+	if _, err := f.Write(data); err == nil {
+		err = f.Sync()
+	}
+	if err == nil {
+		err = f.Close()
+	} else {
+		f.Close()
+	}
+	if err != nil {
+		os.Remove(tmp)
+		return
+	}
+	if err := os.Rename(tmp, t.path); err != nil {
+		os.Remove(tmp)
+	}
 }
 
 func boolToInt(b bool) int {

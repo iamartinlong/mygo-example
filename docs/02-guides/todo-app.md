@@ -27,7 +27,7 @@ go test ./...                 # 存储层测试
 | 文件 | 职责 |
 |---|---|
 | `main.go` | `appState` 状态 + `view(c *ui.Context)` 视图函数（即时模式，主线程每帧调用） |
-| `store.go` | `Todos` 存储：互斥锁保护内存列表，`Save()` 同步写 `%APPDATA%\Todo Native\todos.json` |
+| `store.go` | `Todos` 存储：互斥锁保护内存列表，`Save()` 同步原子写（temp+fsync+rename）`%APPDATA%\Todo Native\todos.json`；带版本信封，兼容读 v1 裸数组，拒绝更新版本写入的文件 |
 | `store_test.go` | 持久化往返、增删清测试（写入是异步时序敏感的，测试等待文件内容匹配） |
 
 ## 打包（安装包）
