@@ -6,6 +6,8 @@
 
 - [mygo 调研报告](01-research/mygo-research.md) — 定位、双模式架构、工程化、本机验证结论、评价
 - [原生 UI API 速查](01-research/mygo-native-ui-api.md) — todo 应用实际用到的 `package ui` API 与模式
+- [分发信任：签名与自动更新](01-research/mygo-updates-signing.md) — 更新链路、updater 插件、Windows/macOS 证书方案与成本
+- [生产可用差距调研](01-research/mygo-production-gaps.md) — 交叉编译/IME/版本节奏结论 + 待办清单
 
 ## 02-guides — 使用指南
 
@@ -18,6 +20,7 @@
 ## 04-verification — 验收记录
 
 - [验收记录](04-verification/acceptance.md) — 编译、测试、运行截图的证据与命令
+- [交叉编译验收](04-verification/cross-compile.md) — Windows 上一条命令产出 linux/darwin 产物的证据
 
 ## 本仓库布局
 
