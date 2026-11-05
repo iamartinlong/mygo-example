@@ -17,16 +17,18 @@ type app struct {
 	dark    bool    // follows the web .dark variant; a toggle arrives in B13
 	sidebar float32 // sidebar width in DIPs, ui.Split drags it
 
-	st         *store.Store
-	reqs       []store.Request
-	cols       []store.Collection
-	rows       []sideRow
-	list       ui.ListState
-	selRow     int // ui.List choice; -1 none
-	selectedID string
-	filter     string
-	lastFilter string
-	pending    pending
+	st          *store.Store
+	reqs        []store.Request
+	cols        []store.Collection
+	rows        []sideRow
+	list        ui.ListState
+	selRow      int // ui.List choice; -1 none
+	selectedID  string
+	filter      string
+	lastFilter  string
+	pending     pending
+	edit        reqEdit
+	showFullURL bool
 }
 
 func (a *app) view(c *ui.Context) {
@@ -58,11 +60,6 @@ func (a *app) topBar(c *ui.Context, p palette) {
 			ui.Text(c, "server online").FontSize(11).TextColor(p.mutedFg.color())
 		})
 	})
-}
-
-func (a *app) mainPane(c *ui.Context, p palette) {
-	// workspace empty-state frame; its copy lands with the send flow (B5)
-	ui.Column(c).Fill().Background(p.card.color()).AlignItems(ui.Center)
 }
 
 func main() {
