@@ -43,6 +43,12 @@ cd _research/mygo && go run ./cmd/mygo build ../../todo-app
 - `todo-app/build/windows-amd64/Todo Native.exe`（10,668,544 B）：烟测启动正常，进程存活
 - `todo-app/build/windows-amd64/todo-native-setup-0.1.0-amd64.exe`（3,387,511 B，NSIS）：已产出，未实际安装（会改系统状态：%LOCALAPPDATA%、开始菜单、卸载项）
 
+## 图标验证（第二次打包）
+
+- 首次打包未配图标（`mygo.json` 无 `icon`，`resources/icon.png` 不存在），安装后无图标——已补 1024×1024 图标至 `todo-app/resources/icon.png`（ImageGen 生成，去除水印后入库）
+- 重打包：安装器 3.2 → 4.4 MB；`[System.Drawing.Icon]::ExtractAssociatedIcon` 从新 exe 提取出的资源图标与设计一致，嵌入确认生效
+- 已安装的旧版本用新安装器覆盖安装即更新；用户数据（`%APPDATA%\Todo Native`）不受重装影响
+
 ## 体积
 
 - `todo-app.exe`（调试）：14.8 MB

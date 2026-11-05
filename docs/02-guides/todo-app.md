@@ -39,6 +39,7 @@ go run ./cmd/mygo build ../../todo-app
 ```
 
 - 配置：`todo-app/mygo.json`（name / identifier / version / out）
+- 图标：`todo-app/resources/icon.png`（方形 PNG，最好 1024×1024）存在即自动嵌入 exe 资源并用作安装器图标；`icon-dev.png` 可单独给开发版。换图标后重打包即可，无需清缓存
 - 产物在 `todo-app/build/windows-amd64/`：`Todo Native.exe`（~9.5 MB，带图标/版本信息/按显示器 DPI manifest，无控制台窗口）+ `todo-native-setup-0.1.0-amd64.exe`（~3.2 MB）
 - 安装器装到 `%LOCALAPPDATA%\Programs\Todo Native`（当前用户，免管理员），含开始菜单快捷方式、卸载项、自更新支持；静默安装 `/S`
 - NSIS 未安装时，mygo 首次需要会自动下载官方 NSIS 3.13 zip（SHA-256 校验后存于 `%LOCALAPPDATA%\mygo`）
