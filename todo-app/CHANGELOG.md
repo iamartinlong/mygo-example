@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0（未发布）
+## 0.3.0
 
 - 行内重命名：Finder 式单击选中、停顿再单击编辑（ui.EditableText）
 - 到期日：行内日历 popover 选日即存，逾期标红，可清除
