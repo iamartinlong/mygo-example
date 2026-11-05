@@ -16,15 +16,20 @@ var methods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS
 
 // reqEdit is the request loaded into the workspace pane; Save writes it back.
 type reqEdit struct {
-	id      string
-	colID   string
-	name    string
-	method  string
-	url     string
-	params  []store.KV
-	headers []store.KV
-	tab     string // "Params" or "Headers"
-	dirty   bool
+	id       string
+	colID    string
+	name     string
+	method   string
+	url      string
+	params   []store.KV
+	headers  []store.KV
+	bodyType string
+	body     string
+	form     []store.KV
+	authType string
+	auth     store.Auth
+	tab      string // Params / Headers / Body / Auth
+	dirty    bool
 }
 
 func (a *app) loadEdit() {
@@ -39,8 +44,12 @@ func (a *app) loadEdit() {
 	a.edit = reqEdit{
 		id: r.ID, colID: ptrStr(r.CollectionID),
 		name: r.Name, method: r.Method, url: r.URL,
-		params: r.Params, headers: r.Headers, tab: "Params",
+		params: r.Params, headers: r.Headers,
+		bodyType: r.BodyType, body: r.Body, form: r.Form,
+		authType: r.AuthType, auth: r.Auth,
+		tab: "Params",
 	}
+	a.resetBodyBuf()
 }
 
 func ptrStr(p *string) string {
@@ -77,6 +86,10 @@ func (a *app) mainPane(c *ui.Context, p palette) {
 			a.kvEditor(c, p, "parameter", &a.edit.params)
 		case "Headers":
 			a.kvEditor(c, p, "header", &a.edit.headers)
+		case "Body":
+			a.bodyPane(c, p)
+		case "Auth":
+			a.authPane(c, p)
 		}
 	})
 }
@@ -129,7 +142,10 @@ func (a *app) saveEdit() {
 	}
 	r.Name, r.Method, r.URL = a.edit.name, a.edit.method, a.edit.url
 	r.Params, r.Headers = a.edit.params, a.edit.headers
+	r.BodyType, r.Body, r.Form = a.edit.bodyType, a.bodyBuf.String(), a.edit.form
+	r.AuthType, r.Auth = a.edit.authType, a.edit.auth
 	if _, err := a.st.UpdateRequest(r, false); err == nil {
+		a.bodyBuf.MarkSaved()
 		a.edit.dirty = false
 		a.refresh()
 	}
@@ -219,7 +235,7 @@ func (a *app) curlRow(c *ui.Context, p palette) {
 func (a *app) tabStrip(c *ui.Context, p palette) {
 	ui.Row(c).Height(32).Padding(0, 16, 0, 16).Gap(16).
 		AlignItems(ui.Center).Children(func() {
-		for _, tab := range []string{"Params", "Headers"} {
+		for _, tab := range []string{"Params", "Headers", "Body", "Auth"} {
 			t := tab
 			active := a.edit.tab == t
 			row := ui.Row(c).Height(30).AlignItems(ui.Center)

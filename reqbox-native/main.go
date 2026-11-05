@@ -10,6 +10,7 @@ import (
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
+	"github.com/egoist/mygo/ui/editor"
 	"reqbox-desktop/pkg/store"
 )
 
@@ -29,6 +30,8 @@ type app struct {
 	pending     pending
 	edit        reqEdit
 	showFullURL bool
+	bodyBuf     *editor.Buffer
+	bodyState   *editor.State
 }
 
 func (a *app) view(c *ui.Context) {
