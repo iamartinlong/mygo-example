@@ -106,3 +106,25 @@ mygo.NewWindow(mygo.WindowOptions{URL: "/"})
 - 安装器是 NSIS 系，静默参数 `/S`；Git Bash 会把 `/S` 路径转换成磁盘路径导致静默失败——必须 `MSYS_NO_PATHCONV=1`。
 
 发布属外部动作，等用户开口再执行（draft release + manifest 最后传的次序照 todo-app 流程）。
+
+## 八、路线 B 批次计划（2026-11-05 用户批准「先 webview，再原生」后开工）
+
+复用批①的 loopback server + store（webview 版的 `reqbox-desktop/` 保留为对照基线；原生版独立目录 `reqbox-native/`，同一 module 下平级包）。顺序按「先骨架后血肉、每批截图对照 web 版」：
+
+| # | 批 | 内容 |
+|---|---|---|
+| B1 | 主题基座 + 原生壳 | oklch tokens、Archivo/JetBrains Mono 内嵌注册、hairline/eyebrow 工具、左右 `ui.Split` 骨架（空面板）+ 顶栏 |
+| B2 | Sidebar | collections/requests `ui.List` + 方法色带 + 新建/重命名/删除 |
+| B3 | RequestBar + Tabs | URL/方法 Select、Params/Headers KV 行编辑 |
+| B4 | Body/Auth + Code editor | JSON 编辑器（CodeMirror 对位） |
+| B5 | 发送 + Response | runner 接入、状态/分阶段计时/body 预览 |
+| B6 | History | 运行历史 List |
+| B7 | Mocks | mock 发布/复制 URL/停用 |
+| B8 | Environments | 环境管理 + `{{var}}` 显示 |
+| B9 | 对话框 ×5 | headless DialogBase 重建 |
+| B10 | Toast + 快捷键 | Ctrl+Enter/Ctrl+S/Ctrl+N |
+| B11 | i18n | en/zh 运行时对齐 web 版 280 键 |
+| B12 | 设置/导出导入 | Snap/Restore 接入 |
+| B13 | 明暗主题 + 微排版打磨 | `.dark` 变体、tnum、间距校准 |
+
+每批完成 = 编译 + 真机运行 + 截图与 web 版同面板对照 + 提交。
