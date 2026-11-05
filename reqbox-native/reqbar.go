@@ -108,36 +108,36 @@ func (a *app) mainPane(c *ui.Context, p palette) {
 func (a *app) emptyState(c *ui.Context, p palette) {
 	ui.Column(c).Fill().AlignItems(ui.Center).Center().Padding(0, 24, 0, 24).
 		Children(func() {
-		ui.Column(c).Width(448).Gap(12).Children(func() {
-			ui.Text(c, strings.ToUpper(tr("empty.eyebrow"))).
-				FontSize(11).LetterSpacing(1.5).Font("JetBrains Mono").
-				TextColor(p.mutedFg.color())
-			ui.Text(c, tr("empty.title")).FontSize(21).Bold().LineHeight(1.25)
-			ui.Text(c, tr("empty.desc")).FontSize(13).
-				TextColor(p.mutedFg.color())
-			ui.Row(c).Height(34).Gap(10).AlignItems(ui.Center).Children(func() {
-				e := ui.Row(c).Height(28).Padding(0, 14, 0, 14).Gap(7).
-					AlignItems(ui.Center).Background(p.foreground.color()).
-					Children(func() {
-						ui.Icon(c, iconFileText).Size(13, 13).
-							TextColor(p.primaryFg.color())
-						ui.Text(c, tr("empty.newRequest")).FontSize(12).
-							SingleLine().TextColor(p.primaryFg.color())
-					})
-				if e.Clicked() {
-					a.pending.newRequest = true
-				}
-				ui.Text(c, tr("empty.orPress")).FontSize(10.5).
-					Font("JetBrains Mono").TextColor(p.mutedFg.color())
-			})
-			ui.Row(c).Fill().Height(1).Background(p.hairline.color())
-			ui.Row(c).Gap(16).Children(func() {
-				a.featureCol(c, p, tr("empty.featRequests"), tr("empty.featRequestsSub"))
-				a.featureCol(c, p, tr("empty.featHistory"), tr("empty.featHistorySub"))
-				a.featureCol(c, p, tr("empty.featMocks"), tr("empty.featMocksSub"))
+			ui.Column(c).Width(448).Gap(12).Children(func() {
+				ui.Text(c, strings.ToUpper(tr("empty.eyebrow"))).
+					FontSize(11).LetterSpacing(1.5).Font("JetBrains Mono").
+					TextColor(p.mutedFg.color())
+				ui.Text(c, tr("empty.title")).FontSize(21).Bold().LineHeight(1.25)
+				ui.Text(c, tr("empty.desc")).FontSize(13).
+					TextColor(p.mutedFg.color())
+				ui.Row(c).Height(34).Gap(10).AlignItems(ui.Center).Children(func() {
+					e := ui.Row(c).Height(28).Padding(0, 14, 0, 14).Gap(7).
+						AlignItems(ui.Center).Background(p.foreground.color()).
+						Children(func() {
+							ui.Icon(c, iconFileText).Size(13, 13).
+								TextColor(p.primaryFg.color())
+							ui.Text(c, tr("empty.newRequest")).FontSize(12).
+								SingleLine().TextColor(p.primaryFg.color())
+						})
+					if e.Clicked() {
+						a.pending.newRequest = true
+					}
+					ui.Text(c, tr("empty.orPress")).FontSize(10.5).
+						Font("JetBrains Mono").TextColor(p.mutedFg.color())
+				})
+				ui.Row(c).Fill().Height(1).Background(p.hairline.color())
+				ui.Row(c).Gap(16).Children(func() {
+					a.featureCol(c, p, tr("empty.featRequests"), tr("empty.featRequestsSub"))
+					a.featureCol(c, p, tr("empty.featHistory"), tr("empty.featHistorySub"))
+					a.featureCol(c, p, tr("empty.featMocks"), tr("empty.featMocksSub"))
+				})
 			})
 		})
-	})
 }
 
 func (a *app) featureCol(c *ui.Context, p palette, title, sub string) {
@@ -153,7 +153,7 @@ func (a *app) titleRow(c *ui.Context, p palette) {
 	if a.edit.dirty {
 		status = tr("bar.unsavedChanges")
 	}
-	ui.Row(c).Height(44).Padding(0, 16, 0, 16).Gap(10).
+	ui.Row(c).Height(48).Padding(0, 16, 0, 16).Gap(10).
 		AlignItems(ui.Center).Children(func() {
 		if ui.EditableText(c, &a.edit.name).FontSize(13.5).Bold().
 			SingleLine().Changed() {
@@ -203,16 +203,16 @@ func (a *app) saveEdit() {
 }
 
 func (a *app) requestBar(c *ui.Context, p palette) {
-	ui.Row(c).Height(40).Padding(0, 16, 0, 16).Gap(8).
+	ui.Row(c).Height(42).Padding(0, 16, 0, 16).Gap(8).
 		AlignItems(ui.Center).Children(func() {
-		if ui.Select(c, &a.edit.method, methods).Width(112).Height(30).Changed() {
+		if ui.Select(c, &a.edit.method, methods).Width(112).Height(34).Changed() {
 			a.edit.dirty = true
 		}
 		if ui.TextInput(c, &a.edit.url).Placeholder(tr("bar.urlPlaceholder")).
-			Grow(1).Height(30).FontSize(12.5).Changed() {
+			Grow(1).Height(34).FontSize(12.5).Changed() {
 			a.edit.dirty = true
 		}
-		e := ui.Row(c).Width(28).Height(28).AlignItems(ui.Center).Center().
+		e := ui.Row(c).Width(28).Height(34).AlignItems(ui.Center).Center().
 			Children(func() {
 				ui.Icon(c, iconCopy).Size(13, 13).TextColor(p.mutedFg.color())
 			})
@@ -224,7 +224,7 @@ func (a *app) requestBar(c *ui.Context, p palette) {
 }
 
 func (a *app) sendBtn(c *ui.Context, p palette) {
-	e := ui.Row(c).Height(30).Padding(0, 16, 0, 16).Gap(6).
+	e := ui.Row(c).Height(34).Padding(0, 16, 0, 16).Gap(6).
 		AlignItems(ui.Center).Background(p.primary.color()).Children(func() {
 		if a.run.running {
 			ui.Text(c, "…").FontSize(11.5).Bold().
@@ -241,7 +241,7 @@ func (a *app) sendBtn(c *ui.Context, p palette) {
 }
 
 func (a *app) fullURLRow(c *ui.Context, p palette) {
-	ui.Row(c).Height(26).Padding(0, 16, 0, 16).Gap(6).
+	ui.Row(c).Height(25).Padding(0, 16, 0, 16).Gap(6).
 		AlignItems(ui.Center).Children(func() {
 		e := ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
 			ui.Icon(c, iconChevronRt).Size(11, 11).TextColor(p.mutedFg.color())
@@ -275,16 +275,16 @@ func (a *app) curlRow(c *ui.Context, p palette) {
 			label = col.Name
 		}
 	}
-	ui.Row(c).Height(28).Padding(0, 16, 0, 16).Gap(12).
+	ui.Row(c).Height(31).Padding(0, 16, 6, 16).Gap(4).
 		AlignItems(ui.Center).Children(func() {
-		e := ui.Row(c).Children(func() {
+		e := ui.Row(c).Padding(0, 8, 0, 8).Children(func() {
 			ui.Text(c, tr("bar.curl")).FontSize(11.5).Font("JetBrains Mono").
 				SingleLine().TextColor(p.foreground.color())
 		})
 		if e.Clicked() {
 			mygo.Clipboard.WriteText(curlFor(a.edit.method, a.edit.url, a.edit.params))
 		}
-		e = ui.Row(c).Children(func() {
+		e = ui.Row(c).Padding(0, 8, 0, 8).Children(func() {
 			ui.Text(c, tr("common.delete")).FontSize(11.5).SingleLine().TextColor(p.bad.color())
 		})
 		if e.Clicked() {
@@ -331,8 +331,8 @@ var kvAddKey = map[string]string{
 }
 
 func (a *app) kvEditor(c *ui.Context, p palette, what string, kvs *[]store.KV) {
-	ui.Row(c).Height(30).Padding(0, 16, 0, 16).Gap(8).
-		AlignItems(ui.Center).Children(func() {
+	ui.Row(c).Height(23).Padding(0, 16, 6, 16).Gap(8).
+		AlignItems(ui.End).Children(func() {
 		ui.Row(c).Width(24)
 		ui.Text(c, strings.ToUpper(tr("kv."+what))).FontSize(10).LetterSpacing(0.8).
 			SingleLine().TextColor(p.mutedFg.color()).Grow(2)
@@ -365,9 +365,10 @@ func (a *app) kvEditor(c *ui.Context, p palette, what string, kvs *[]store.KV) {
 			}
 		})
 	}
-	ui.Row(c).Height(44).Padding(0, 16, 0, 16).Children(func() {
-		e := ui.Row(c).Fill().Height(36).AlignItems(ui.Center).Center().
-			Background(p.background.color()).Children(func() {
+	ui.Row(c).Height(72).Padding(8, 16, 0, 16).Children(func() {
+		e := ui.Row(c).Fill().Height(64).Radius(6).
+			Border(1, p.border.color()).BorderStyle(ui.BorderDashed).
+			AlignItems(ui.Center).Center().Children(func() {
 			ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
 				ui.Icon(c, iconPlus).Size(12, 12).TextColor(p.mutedFg.color())
 				ui.Text(c, tr(kvAddKey[what])).FontSize(12).SingleLine().

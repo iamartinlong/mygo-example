@@ -1,8 +1,6 @@
 package main
 
 import (
-	"strconv"
-
 	"github.com/egoist/mygo/ui"
 	"reqbox-desktop/pkg/store"
 )
@@ -61,7 +59,7 @@ func (a *app) resolveEnvVars() map[string]string {
 // "No environment", every environment, and the manager entry.
 func (a *app) envRow(c *ui.Context, p palette) {
 	sel := ui.SelectBase(c, &a.envChoice)
-	sel.Trigger.Height(36).Padding(0, 12, 0, 12).Gap(8).
+	sel.Trigger.Grow(1).Height(28).Padding(0, 6, 0, 6).Gap(8).
 		AlignItems(ui.Center).Children(func() {
 		ui.Text(c, a.envLabel()).FontSize(12).Grow(1)
 		ui.Icon(c, iconChevronDown).TextColor(p.mutedFg.color())
@@ -130,8 +128,16 @@ func (a *app) envListPane(c *ui.Context, p palette) {
 					AlignItems(ui.Center).Background(p.secondary.color()).
 					Radius(5).Children(func() {
 					ui.Text(c, env.Name).FontSize(12.5).Grow(1)
-					ui.Text(c, strconv.Itoa(len(env.Variables))+" vars").
-						FontSize(11).TextColor(p.mutedFg.color())
+					if env.ID == a.activeEnv {
+						ui.Row(c).Height(15).Padding(0, 4, 0, 4).
+							AlignItems(ui.Center).
+							Background(p.ok.color().Alpha(0.15)).Radius(3).
+							Children(func() {
+								ui.Text(c, tr("env.activeBadge")).FontSize(9).
+									Font("JetBrains Mono").
+									TextColor(p.ok.color())
+							})
+					}
 				})
 				if e.Clicked() {
 					a.openEnvEdit(env.ID)

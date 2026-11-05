@@ -23,6 +23,7 @@ type palette struct {
 	panel, rail, chrome, hairline, input, muted lch
 	secondaryFg, accentFg                       lch
 	methods                                     methodColors
+	isDark                                      bool
 }
 
 type methodColors struct {
@@ -50,13 +51,14 @@ func (p palette) method(m string) lch {
 var light = palette{
 	background: lch{98.5, .003, 240}, card: lch{100, 0, 0},
 	secondary: lch{95.5, .005, 240}, accent: lch{94.5, .008, 240},
-	border: lch{90, .006, 240},
+	border:     lch{90, .006, 240},
 	foreground: lch{22, .012, 250}, mutedFg: lch{53, .012, 250},
 	primary: lch{28, .014, 250}, primaryFg: lch{98.5, .003, 240},
 	ring: lch{55, .11, 250}, ok: lch{55, .11, 165}, warn: lch{62, .13, 70}, bad: lch{56, .17, 25},
 	panel: lch{97, .004, 240}, rail: lch{95.5, .005, 240}, chrome: lch{98.5, .003, 240},
 	hairline: lch{90, .006, 240}, input: lch{88, .006, 240}, muted: lch{95.5, .005, 240},
 	secondaryFg: lch{30, .012, 250}, accentFg: lch{24, .012, 250},
+	isDark: false,
 	methods: methodColors{
 		get:    lch{55, .11, 165},
 		post:   lch{60, .12, 70},
@@ -71,13 +73,14 @@ var light = palette{
 var dark = palette{
 	background: lch{16.5, .008, 250}, card: lch{20, .009, 250},
 	secondary: lch{25, .009, 250}, accent: lch{27, .01, 250},
-	border: lch{29, .009, 250},
+	border:     lch{29, .009, 250},
 	foreground: lch{93, .004, 240}, mutedFg: lch{66, .012, 245},
 	primary: lch{92, .005, 240}, primaryFg: lch{19, .009, 250},
 	ring: lch{72, .03, 250}, ok: lch{78, .13, 165}, warn: lch{82, .13, 75}, bad: lch{70, .16, 25},
 	panel: lch{18.5, .008, 250}, rail: lch{15.5, .008, 250}, chrome: lch{17.5, .008, 250},
 	hairline: lch{27, .009, 250}, input: lch{33, .009, 250}, muted: lch{24.5, .009, 250},
 	secondaryFg: lch{90, .004, 240}, accentFg: lch{95, .004, 240},
+	isDark: true,
 	methods: methodColors{
 		get:    lch{78, .13, 165},
 		post:   lch{80, .12, 75},
@@ -92,11 +95,17 @@ var dark = palette{
 // top of the view so every widget follows them.
 func theme(p palette, system *ui.Theme) *ui.Theme {
 	t := *system
+	t.Dark = p.isDark
 	t.Background = p.background.color()
 	t.Border = p.border.color()
 	t.Text = p.foreground.color()
 	t.TextMuted = p.mutedFg.color()
+	t.Surface = p.card.color()
+	t.SurfaceHover = p.secondary.color()
+	t.SurfacePressed = p.accent.color()
 	t.Accent = p.primary.color()
+	t.AccentHover = p.primary.color()
+	t.AccentPressed = p.primary.color()
 	t.AccentText = p.primaryFg.color()
 	t.Danger = p.bad.color()
 	t.Warning = p.warn.color()

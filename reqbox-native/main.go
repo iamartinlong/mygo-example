@@ -16,7 +16,7 @@ import (
 )
 
 type app struct {
-	dark    bool    // follows the web .dark variant; a toggle arrives in B13
+	dark    bool    // follows the web .dark variant, toggled from the top bar
 	sidebar float32 // sidebar width in DIPs, ui.Split drags it
 
 	st          *store.Store
@@ -50,6 +50,7 @@ type app struct {
 	confirm     confirmState
 	toasts      []toastMsg
 	runDlg      bool
+	langSel     string
 
 	win      *mygo.Window
 	exec     *runner.Executor
@@ -90,18 +91,116 @@ func (a *app) pal() palette {
 	return light
 }
 
-// topBar mirrors the web chrome: wordmark + LOCAL badge left, health right.
+// topBar mirrors the web chrome: Mark + wordmark + LOCAL badge left,
+// health, the language menu and the theme toggle right.
 func (a *app) topBar(c *ui.Context, p palette) {
-	ui.Row(c).Height(40).Padding(0, 12, 0, 12).Gap(8).
-		AlignItems(ui.Center).Children(func() {
-		ui.Text(c, tr("app.name")).Bold().Grow(1)
-		ui.Text(c, tr("app.local")).FontSize(9).LetterSpacing(0.6).Font("JetBrains Mono").
-			TextColor(p.mutedFg.color())
-		ui.Row(c).Gap(5).AlignItems(ui.Center).Children(func() {
-			ui.Column(c).Width(7).Height(7).Background(p.ok.color())
-			ui.Text(c, tr("app.online")).FontSize(11).TextColor(p.mutedFg.color())
-		})
+	ui.Column(c).Children(func() {
+		ui.Row(c).Height(40).Padding(0, 12, 0, 12).Gap(12).
+			AlignItems(ui.Center).Background(p.chrome.color()).
+			Children(func() {
+				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
+					ui.Icon(c, iconMark).Size(18, 18).
+						TextColor(p.foreground.color())
+					ui.Text(c, tr("app.name")).FontSize(13).Bold().
+						SingleLine()
+					badge(c, p, tr("app.local"))
+				})
+				ui.Row(c).Grow(1)
+				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
+					ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
+						ui.Column(c).Width(6).Height(6).Radius(3).
+							Background(p.ok.color())
+						ui.Text(c, tr("app.online")).FontSize(10.5).
+							TextColor(p.mutedFg.color())
+					})
+					a.langMenu(c, p)
+					a.themeBtn(c, p)
+				})
+			})
+		ui.Row(c).Height(1).Fill().Background(p.hairline.color())
 	})
+}
+
+// badge is the web's LOCAL chip: mono, wide-tracked, hairline border.
+func badge(c *ui.Context, p palette, label string) {
+	ui.Row(c).Height(16).Padding(0, 4, 0, 4).AlignItems(ui.Center).
+		Border(1, p.border.color()).Radius(3).Children(func() {
+		ui.Text(c, label).FontSize(9.5).LetterSpacing(0.6).
+			Font("JetBrains Mono").TextColor(p.mutedFg.color())
+	})
+}
+
+// langMenu is the web header's language dropdown: English and 中文,
+// radio-style, applied at once and remembered.
+func (a *app) langMenu(c *ui.Context, p palette) {
+	a.langSel = appLang
+	sel := ui.SelectBase(c, &a.langSel)
+	sel.Trigger.Width(28).Height(28).Center().
+		Children(func() {
+			ui.Icon(c, iconLanguages).Size(14, 14).
+				TextColor(p.mutedFg.color())
+		})
+	sel.Popup(func(panel ui.Element) {
+		panel.MinWidth(140).Padding(4).Background(p.card.color()).
+			Radius(6).Border(1, p.border.color())
+		for _, l := range []struct{ id, label string }{
+			{"en", tr("app.language.en")}, {"zh", tr("app.language.zh")},
+		} {
+			it := sel.Item(l.id).Padding(6, 10)
+			it.Children(func(label string) func() {
+				return func() { ui.Text(c, label).FontSize(12) }
+			}(l.label))
+		}
+	})
+	if a.langSel != appLang {
+		setLang(a.st, a.langSel)
+		a.langSel = appLang
+		// Group headers hold translated text, so they need re-deriving.
+		a.rebuildRows()
+	}
+}
+
+// themeBtn flips between the web's two variants; the sun shows in dark
+// (it would move you to light) and the moon in light, as on the web.
+func (a *app) themeBtn(c *ui.Context, p palette) {
+	icon := iconMoon
+	if a.dark {
+		icon = iconSun
+	}
+	e := ui.Row(c).Width(28).Height(28).Center().Children(func() {
+		ui.Icon(c, icon).Size(14, 14).TextColor(p.mutedFg.color())
+	})
+	if e.Clicked() {
+		a.dark = !a.dark
+		if a.st != nil {
+			_ = a.st.SetSetting(setTheme, themeName(a.dark))
+		}
+	}
+}
+
+func themeName(dark bool) string {
+	if dark {
+		return "dark"
+	}
+	return "light"
+}
+
+const setTheme = "theme"
+
+// loadTheme reads the stored variant. The web starts dark unless the
+// system asks for light; mygo exposes no prefers-color-scheme, so dark
+// is the starting point here and the first toggle is what gets remembered.
+func (a *app) loadTheme() {
+	a.dark = true
+	if a.st == nil {
+		return
+	}
+	switch a.st.GetSetting(setTheme, "") {
+	case "light":
+		a.dark = false
+	case "dark":
+		a.dark = true
+	}
 }
 
 func main() {
@@ -120,8 +219,11 @@ func main() {
 		if err != nil {
 			log.Printf("store: %v", err)
 		}
+		// Before the first refresh: it caches translated group headers.
+		applyLangSetting(a.st)
 		a.refresh()
 		a.loadRunSettings()
+		a.loadTheme()
 		a.startMockGateway()
 
 		a.win = mygo.NewWindow(mygo.WindowOptions{

@@ -137,10 +137,15 @@ func (a *app) applyPending() {
 // The environment picker's menu arrives with B8.
 func (a *app) sidebarPane(c *ui.Context, p palette) {
 	ui.Column(c).Fill().Background(p.panel.color()).Children(func() {
-		a.envRow(c, p)
-		ui.Row(c).Padding(8, 12, 8, 12).Gap(8).AlignItems(ui.Center).Children(func() {
-			a.pill(c, p, tr("sidebar.requests"), len(a.reqs), "requests")
-			a.pill(c, p, tr("sidebar.history"), len(a.hist), "history")
+		ui.Row(c).Height(48).Padding(12, 12, 8, 12).AlignItems(ui.Center).
+			Children(func() { a.envRow(c, p) })
+		ui.Row(c).Padding(0, 12, 0, 12).Children(func() {
+			ui.Row(c).Grow(1).Gap(2).Padding(2, 2, 2, 2).Radius(8).
+				Background(p.muted.color().Alpha(0.6)).
+				AlignItems(ui.Center).Children(func() {
+				a.pill(c, p, tr("sidebar.requests"), len(a.reqs), "requests")
+				a.pill(c, p, tr("sidebar.history"), len(a.hist), "history")
+			})
 		})
 		a.filterRow(c, p)
 		if a.st == nil {
@@ -187,15 +192,15 @@ func (a *app) historyPane(c *ui.Context, p palette) {
 	a.applyPending()
 	ui.Row(c).Height(34).Padding(0, 12, 0, 12).AlignItems(ui.Center).
 		Children(func() {
-		e := ui.Text(c, tr("sidebar.clearAll")).FontSize(11.5).SingleLine().
-			TextColor(p.bad.color())
-		if e.Clicked() {
-			a.askConfirm(tr("confirm.clearHistory.title"),
-				tr("confirm.clearHistory.desc"),
-				tr("confirm.clearHistory.confirm"), func() { a.pending.clearHist = true })
-			a.applyPending()
-		}
-	})
+			e := ui.Text(c, tr("sidebar.clearAll")).FontSize(11.5).SingleLine().
+				TextColor(p.bad.color())
+			if e.Clicked() {
+				a.askConfirm(tr("confirm.clearHistory.title"),
+					tr("confirm.clearHistory.desc"),
+					tr("confirm.clearHistory.confirm"), func() { a.pending.clearHist = true })
+				a.applyPending()
+			}
+		})
 }
 
 func (a *app) histRowView(c *ui.Context, p palette, i int) {
@@ -220,7 +225,8 @@ func (a *app) histRowView(c *ui.Context, p palette, i int) {
 		ui.Column(c).Gap(1).AlignItems(ui.End).Children(func() {
 			if h.OK {
 				ui.Text(c, strconv.Itoa(h.Status)).FontSize(10.5).
-					Font("JetBrains Mono").SingleLine().TextColor(p.ok.color())
+					Font("JetBrains Mono").FontFeatures("tnum").
+					SingleLine().TextColor(p.ok.color())
 			} else {
 				ui.Text(c, tr("common.failed")).FontSize(10.5).SingleLine().
 					TextColor(p.bad.color())
@@ -241,14 +247,20 @@ func (a *app) histRowView(c *ui.Context, p palette, i int) {
 // as a filled pill and the other as bare text with a count.
 func (a *app) pill(c *ui.Context, p palette, label string, count int, tab string) {
 	active := a.sideTab == tab
-	row := ui.Row(c).Height(26).Padding(0, 12, 0, 12).Gap(6).
-		AlignItems(ui.Center)
+	row := ui.Row(c).Grow(1).Height(25).Radius(6).
+		AlignItems(ui.Center).Justify(ui.Center)
 	if active {
-		row = row.Background(p.card.color())
+		row = row.Background(p.background.color()).
+			Shadow(0, 1, 2, 0, p.foreground.color().Alpha(0.08))
 	}
 	e := row.Children(func() {
-		ui.Text(c, label).FontSize(12)
-		ui.Text(c, strconv.Itoa(count)).FontSize(11).TextColor(p.mutedFg.color())
+		t := ui.Text(c, label).FontSize(11.5)
+		if !active {
+			t.TextColor(p.mutedFg.color())
+		}
+		ui.Text(c, strconv.Itoa(count)).FontSize(10).Margin(0, 0, 0, 6).
+			Font("JetBrains Mono").FontFeatures("tnum").
+			TextColor(p.mutedFg.color())
 	})
 	if e.Clicked() {
 		a.sideTab = tab
@@ -256,9 +268,10 @@ func (a *app) pill(c *ui.Context, p palette, label string, count int, tab string
 }
 
 func (a *app) filterRow(c *ui.Context, p palette) {
-	ui.Row(c).Height(30).Padding(0, 12, 8, 12).Gap(6).
+	ui.Row(c).Height(42).Padding(10, 12, 4, 12).Gap(6).
 		AlignItems(ui.Center).Children(func() {
-		ui.SearchField(c, &a.filter).Fill().Height(26).FontSize(12)
+		ui.SearchField(c, &a.filter).Fill().Height(28).FontSize(12).
+			Placeholder(tr("sidebar.filterRequests"))
 		if a.filterChanged() {
 			a.rebuildRows()
 			if a.sideTab == "history" && a.st != nil {
@@ -319,8 +332,10 @@ func (a *app) sideRowView(c *ui.Context, p palette, i int) {
 				TextColor(m.color())
 		})
 		ui.Column(c).Grow(1).Gap(1).Children(func() {
-			if ui.EditableText(c, &a.rows[i].edit).FontSize(12.5).
-				SingleLine().Changed() {
+			// The web keeps the name text-foreground on the accent row.
+			t := ui.EditableText(c, &a.rows[i].edit).FontSize(12.5).
+				TextColor(p.foreground.color()).SingleLine()
+			if t.Changed() {
 				a.pending.rename = r.ID
 				a.pending.renameTo = a.rows[i].edit
 			}

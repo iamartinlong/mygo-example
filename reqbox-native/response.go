@@ -185,16 +185,17 @@ func (a *app) resetRespBuf() {
 // runBar mirrors the web strip between the tabs and the response: timeout,
 // redirects, TLS, and the "GET · none" summary on the right.
 func (a *app) runBar(c *ui.Context, p palette) {
-	ui.Row(c).Height(44).Padding(0, 16, 0, 16).Gap(10).
+	ui.Row(c).Height(37).Padding(6, 16, 6, 16).Gap(12).
+		BorderWidth(1, 0, 0, 0).BorderColor(p.hairline.color()).
 		AlignItems(ui.Center).Children(func() {
-		ui.Text(c, tr("run.timeout")).FontSize(12).SingleLine().
+		ui.Text(c, tr("run.timeout")).FontSize(11).SingleLine().
 			TextColor(p.mutedFg.color())
-		ui.TextInput(c, &a.run.timeout).Width(56).Height(28).FontSize(12)
-		ui.Text(c, tr("run.seconds")).FontSize(12).SingleLine().TextColor(p.mutedFg.color())
+		ui.TextInput(c, &a.run.timeout).Width(56).Height(24).FontSize(12)
+		ui.Text(c, tr("run.seconds")).FontSize(11).SingleLine().TextColor(p.mutedFg.color())
 		ui.Checkbox(c, &a.run.follow, tr("run.followRedirects"))
 		ui.Checkbox(c, &a.run.verify, tr("run.verifyTls"))
 		ui.Row(c).Grow(1)
-		ui.Text(c, a.edit.method+" · "+a.edit.authType).FontSize(10.5).
+		ui.Text(c, a.edit.method+" · "+a.edit.authType).FontSize(10).
 			Font("JetBrains Mono").SingleLine().TextColor(p.mutedFg.color())
 	})
 }
@@ -204,27 +205,37 @@ func (a *app) runBar(c *ui.Context, p palette) {
 func (a *app) responsePane(c *ui.Context, p palette) {
 	ui.Column(c).FillHeight().Background(p.background.color()).
 		Children(func() {
-		switch {
-		case a.run.running:
-			a.respCenter(c, p, "WAITING", tr("resp.waiting"))
-		case a.run.errText != "":
-			a.respFailed(c, p)
-		case a.run.resp == nil:
-			a.respCenter(c, p, tr("resp.noResponse"), tr("resp.noResponseHint"))
-		default:
-			a.respBody(c, p)
-		}
-	})
+			switch {
+			case a.run.running:
+				a.respCenter(c, p, "WAITING", tr("resp.waiting"), "")
+			case a.run.errText != "":
+				a.respFailed(c, p)
+			case a.run.resp == nil:
+				a.respCenter(c, p, tr("resp.noResponse"),
+					tr("resp.noResponseHint"), "⌘ / Ctrl + Enter")
+			default:
+				a.respBody(c, p)
+			}
+		})
 }
 
-func (a *app) respCenter(c *ui.Context, p palette, eyebrow, msg string) {
-	ui.Column(c).Grow(1).FillHeight().AlignItems(ui.Center).Children(func() {
-		ui.Row(c).Grow(1)
-		ui.Text(c, eyebrow).FontSize(11).LetterSpacing(1).
-			SingleLine().TextColor(p.mutedFg.color())
-		ui.Text(c, msg).FontSize(12.5).SingleLine().TextColor(p.mutedFg.color())
-		ui.Row(c).Grow(1)
-	})
+// respCenter is the web's centred empty state: a mono eyebrow, the hint
+// sentence, and the shortcut line the response panel hardcodes.
+func (a *app) respCenter(c *ui.Context, p palette, eyebrow, msg, keys string) {
+	ui.Column(c).Grow(1).FillHeight().AlignItems(ui.Center).Gap(8).
+		Children(func() {
+			ui.Row(c).Grow(1)
+			ui.Text(c, eyebrow).FontSize(11).LetterSpacing(2).
+				Font("JetBrains Mono").SingleLine().
+				TextColor(p.mutedFg.color().Alpha(0.5))
+			ui.Text(c, msg).FontSize(12).SingleLine().TextColor(p.mutedFg.color())
+			if keys != "" {
+				ui.Text(c, keys).FontSize(10).Margin(8, 0, 0, 0).
+					Font("JetBrains Mono").SingleLine().
+					TextColor(p.mutedFg.color().Alpha(0.5))
+			}
+			ui.Row(c).Grow(1)
+		})
 }
 
 func (a *app) respFailed(c *ui.Context, p palette) {
@@ -263,7 +274,7 @@ func (a *app) respBody(c *ui.Context, p palette) {
 			Background(statusColor(p, r.Status).color().Alpha(0.12)).
 			Children(func() {
 				ui.Text(c, strconv.Itoa(r.Status)).FontSize(11.5).Bold().
-					Font("JetBrains Mono").SingleLine().
+					Font("JetBrains Mono").FontFeatures("tnum").SingleLine().
 					TextColor(statusColor(p, r.Status).color())
 			})
 		if r.StatusText != "" {
@@ -271,8 +282,8 @@ func (a *app) respBody(c *ui.Context, p palette) {
 		}
 		ui.Row(c).Grow(1)
 		ui.Text(c, fmt.Sprintf("%d ms · %s", r.DurationMs, humanBytes(r.SizeBytes))).
-			FontSize(11).Font("JetBrains Mono").SingleLine().
-			TextColor(p.mutedFg.color())
+			FontSize(11).Font("JetBrains Mono").FontFeatures("tnum").
+			SingleLine().TextColor(p.mutedFg.color())
 	})
 	a.respGeneral(c, p)
 	a.respTiming(c, p)

@@ -14,7 +14,8 @@ import (
 // through store Snap/Restore, the format the web's import/export uses.
 
 func (a *app) footerRow(c *ui.Context, p palette) {
-	ui.Row(c).Height(34).Padding(0, 8, 0, 12).Gap(4).
+	ui.Row(c).Height(37).Padding(6, 8, 6, 8).Gap(4).
+		BorderWidth(1, 0, 0, 0).BorderColor(p.hairline.color()).
 		AlignItems(ui.Center).Children(func() {
 		label := tr("sidebar.noEnvironment")
 		if e := a.envByID(a.activeEnv); e != nil {
@@ -29,9 +30,9 @@ func (a *app) footerRow(c *ui.Context, p palette) {
 }
 
 func (a *app) footerBtn(c *ui.Context, p palette, icon *ui.SVG, fn func()) {
-	e := ui.Row(c).Width(26).Height(26).AlignItems(ui.Center).Center().
+	e := ui.Row(c).Width(24).Height(24).AlignItems(ui.Center).Center().
 		Children(func() {
-			ui.Icon(c, icon).Size(15, 15).TextColor(p.mutedFg.color())
+			ui.Icon(c, icon).Size(12, 12).TextColor(p.mutedFg.color())
 		})
 	if e.Clicked() {
 		fn()
