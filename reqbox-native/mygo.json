@@ -1,0 +1,6 @@
+{
+  "name": "Reqbox Native",
+  "identifier": "dev.martinlong.reqbox-native",
+  "version": "0.1.0",
+  "out": "build"
+}
