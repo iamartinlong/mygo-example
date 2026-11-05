@@ -21,6 +21,7 @@
 
 - [验收记录](04-verification/acceptance.md) — 编译、测试、运行截图的证据与命令
 - [交叉编译验收](04-verification/cross-compile.md) — Windows 上一条命令产出 linux/darwin 产物的证据
+- [CJK 渲染验收](04-verification/cjk-input.md) — 中文/日文/Emoji/混排渲染与输入控件实测（experiments/cjk-input）
 
 ## 本仓库布局
 

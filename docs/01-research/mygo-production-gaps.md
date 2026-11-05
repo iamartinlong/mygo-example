@@ -8,11 +8,12 @@
 
 `CGO_ENABLED=0` 在 Windows 上一条命令交叉编译成功，见 [验收记录](../04-verification/cross-compile.md)。但只验证了「能编译」，未在目标平台实际运行。
 
-### IME / CJK 支持：文档覆盖全面，未实测
+### IME / CJK 支持：渲染已实测通过，组字待人工
 
-- `ui.TextInput` / `TextArea` 明确支持输入法组字：组字期间按键归输入法（Enter 选候选不触发提交），`Composing()` 查询组字状态，输入法可看到光标周围文本（支持日文转换、按下长按、联想）
-- 字体渲染：默认用系统界面字体，**其他文字系统（CJK）与 emoji 自动 fallback 到系统字体**，RTL 支持；`Font("Inter, Noto Sans JP")` 可指定族列表，`ui.RegisterFont` 内嵌自定义字体
-- 待实测：中文输入法候选框位置与组字下划线实际渲染、CJK 混排行高、TextScale 放大后布局
+- 渲染实测（[验收记录](../04-verification/cjk-input.md)）：中文/日文/Emoji/全角标点/混排全部正确，Emoji 彩色 fallback，输入控件预填中文正常
+- 文档层面支持输入法组字：组字期间按键归输入法（Enter 选候选不触发提交），`Composing()` 查询组字状态
+- 字体渲染：默认系统界面字体，**CJK 与 emoji 自动 fallback 到系统字体**，RTL 支持；`Font("Inter, Noto Sans JP")` 族列表，`ui.RegisterFont` 内嵌自定义字体
+- 待人工：真实输入法组字体验（候选框、下划线、误触）；TextScale 放大后布局
 
 ### 版本节奏与项目健康度
 
@@ -30,7 +31,7 @@ go.mod 可精确 pin 到版本；早期阶段建议 **pin 精确版本 + 升级�
 | # | 调研项 | 说明 | 状态 |
 |---|---|---|---|
 | 1 | 分发信任（签名+更新 E2E） | 方案已明确，见[更新与签名调研](mygo-updates-signing.md)，差实测 | 文档完成 |
-| 2 | IME/CJK 实测 | 中文输入真实体验 | 待办 |
+| 2 | IME 组字人工实测 | 中文输入真实体验（渲染已机器验证） | 渲染 ✅ / 组字待人工 |
 | 3 | 性能规模 | `ui.List` 万条数据的帧率与内存曲线 | 待办 |
 | 4 | 崩溃与诊断 | view 函数 panic 行为、崩溃日志落盘 | 待办 |
 | 5 | 数据完整性 | 原子写（temp+rename）、存储格式版本迁移 | 踩坑录已有并发写盘教训 |
