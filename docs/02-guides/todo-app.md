@@ -31,6 +31,7 @@ go test ./...                 # 存储层测试
 |---|---|
 | `main.go` | `appState` 状态 + `view(c *ui.Context)` 视图函数（即时模式，主线程每帧调用） |
 | `store.go` | `Todos` 存储：互斥锁保护内存列表，`Save()` 同步原子写（temp+fsync+rename）`%APPDATA%\Todo Native\todos.json`；带版本信封，兼容读 v1 裸数组，拒绝更新版本写入的文件 |
+| `crash.go` | view panic 兜底：recover + `crash.log` 落盘（用户数据目录）+ 恢复重绘；100 次上限后退出。`TODO_CRASH_TEST=1` 注入一次 panic 用于演练 |
 | `store_test.go` | 持久化往返、增删清测试（写入是异步时序敏感的，测试等待文件内容匹配） |
 
 ## 打包（安装包）
@@ -51,7 +52,7 @@ go run ./cmd/mygo build ../../todo-app
 
 ## 数据位置
 
-- Windows：`%APPDATA%\Todo Native\todos.json`
+- Windows：`%APPDATA%\Todo Native\todos.json`；崩溃日志同目录 `crash.log`
 - 由 `app.SetName("Todo Native")` + `mygo.App.Path(mygo.PathUserData)` 决定
 
 ## 扩展方向

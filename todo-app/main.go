@@ -25,6 +25,7 @@ type appState struct {
 	dueFor    int64     // todo whose due-date picker is open, 0 for none
 	dueDraft  time.Time // the date the open calendar edits
 	updateMsg string
+	crashed   bool // crashDrill fired once
 }
 
 // filtered returns the todos the filter shows, done last.
@@ -46,6 +47,11 @@ func (a *appState) filtered() []Todo {
 // view builds the interface from the state, on the main thread, whenever the
 // window needs a frame.
 func (a *appState) view(c *ui.Context) {
+	defer recoverFrame(&mainWin)
+	if crashDrill && !a.crashed {
+		a.crashed = true
+		panic("crash-guard drill")
+	}
 	t := c.Theme()
 	s := a.store.Stats()
 	ui.Column(c).Fill().Children(func() {
@@ -205,6 +211,7 @@ func (a *appState) checkUpdate(win *mygo.Window) {
 // statsView draws the stats window. It redraws itself whenever a store
 // change pushes a frame through statsWin.Update.
 func (a *appState) statsView(c *ui.Context) {
+	defer recoverFrame(&statsWin)
 	t := c.Theme()
 	s := a.store.Stats()
 	ui.Column(c).Fill().Padding(20).Gap(12).Children(func() {
