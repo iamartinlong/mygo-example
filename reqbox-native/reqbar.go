@@ -16,20 +16,22 @@ var methods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS
 
 // reqEdit is the request loaded into the workspace pane; Save writes it back.
 type reqEdit struct {
-	id       string
-	colID    string
-	name     string
-	method   string
-	url      string
-	params   []store.KV
-	headers  []store.KV
-	bodyType string
-	body     string
-	form     []store.KV
-	authType string
-	auth     store.Auth
-	tab      string // Params / Headers / Body / Auth
-	dirty    bool
+	id         string
+	colID      string
+	name       string
+	method     string
+	url        string
+	params     []store.KV
+	headers    []store.KV
+	bodyType   string
+	body       string
+	form       []store.KV
+	authType   string
+	auth       store.Auth
+	exposed    bool
+	exposeSlug string
+	tab        string // Params / Headers / Body / Auth / Publish
+	dirty      bool
 }
 
 func (a *app) loadEdit() {
@@ -47,6 +49,7 @@ func (a *app) loadEdit() {
 		params: r.Params, headers: r.Headers,
 		bodyType: r.BodyType, body: r.Body, form: r.Form,
 		authType: r.AuthType, auth: r.Auth,
+		exposed: r.Exposed, exposeSlug: r.ExposeSlug,
 		tab: "Params",
 	}
 	a.resetBodyBuf()
@@ -90,6 +93,8 @@ func (a *app) mainPane(c *ui.Context, p palette) {
 			a.bodyPane(c, p)
 		case "Auth":
 			a.authPane(c, p)
+		case "Publish":
+			a.publishPane(c, p)
 		}
 		a.runBar(c, p)
 		a.responsePane(c, p)
@@ -146,6 +151,7 @@ func (a *app) saveEdit() {
 	r.Params, r.Headers = a.edit.params, a.edit.headers
 	r.BodyType, r.Body, r.Form = a.edit.bodyType, a.bodyBuf.String(), a.edit.form
 	r.AuthType, r.Auth = a.edit.authType, a.edit.auth
+	r.Exposed, r.ExposeSlug = a.edit.exposed, a.edit.exposeSlug
 	if _, err := a.st.UpdateRequest(r, false); err == nil {
 		a.bodyBuf.MarkSaved()
 		a.edit.dirty = false
@@ -243,7 +249,7 @@ func (a *app) curlRow(c *ui.Context, p palette) {
 func (a *app) tabStrip(c *ui.Context, p palette) {
 	ui.Row(c).Height(32).Padding(0, 16, 0, 16).Gap(16).
 		AlignItems(ui.Center).Children(func() {
-		for _, tab := range []string{"Params", "Headers", "Body", "Auth"} {
+		for _, tab := range []string{"Params", "Headers", "Body", "Auth", "Publish"} {
 			t := tab
 			active := a.edit.tab == t
 			row := ui.Row(c).Height(30).AlignItems(ui.Center)

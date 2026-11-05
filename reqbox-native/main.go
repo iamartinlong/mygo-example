@@ -40,9 +40,10 @@ type app struct {
 	histSel    int
 	histOpenID string
 
-	win  *mygo.Window
-	exec *runner.Executor
-	run  runState
+	win      *mygo.Window
+	exec     *runner.Executor
+	run      runState
+	mockAddr string
 }
 
 func (a *app) view(c *ui.Context) {
@@ -89,6 +90,7 @@ func main() {
 			log.Printf("store: %v", err)
 		}
 		a.refresh()
+		a.startMockGateway()
 
 		a.win = mygo.NewWindow(mygo.WindowOptions{
 			Title:     "Reqbox",
