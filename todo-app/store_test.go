@@ -166,6 +166,30 @@ func TestLoadStoreBOM(t *testing.T) {
 	}
 }
 
+func TestOnChange(t *testing.T) {
+	s, _ := openTestStore(t)
+	n := 0
+	s.OnChange(func() { n++ })
+
+	s.Add("one")
+	s.SetDone(s.Snapshot()[0].ID, true)
+	if n != 2 {
+		t.Fatalf("observer ran %d times after Add+SetDone", n)
+	}
+	if got := s.ClearDone(); got != 1 {
+		t.Fatalf("ClearDone removed %d", got)
+	}
+	if n != 3 {
+		t.Fatalf("observer ran %d times after ClearDone", n)
+	}
+	if got := s.ClearDone(); got != 0 {
+		t.Fatalf("second ClearDone removed %d", got)
+	}
+	if n != 3 { // ClearDone with nothing done skips Save
+		t.Fatalf("observer ran %d times after no-op ClearDone", n)
+	}
+}
+
 func TestRemoveAndClearDone(t *testing.T) {
 	s, _ := openTestStore(t)
 	a, _ := s.Add("one")

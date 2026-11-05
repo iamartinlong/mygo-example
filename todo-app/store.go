@@ -42,10 +42,11 @@ type storeFile struct {
 
 // Todos stores the list as JSON in the user data directory.
 type Todos struct {
-	mu    sync.Mutex
-	path  string
-	items []Todo
-	next  int64
+	mu        sync.Mutex
+	path      string
+	items     []Todo
+	next      int64
+	observers []func()
 }
 
 // OpenStore loads the saved todos.
@@ -183,6 +184,15 @@ func (t *Todos) ClearDone() int {
 	return n
 }
 
+// OnChange registers fn to run after each saved change. The callback runs
+// on whatever thread made the change; a window it touches must schedule
+// its own redraw through Window.Update.
+func (t *Todos) OnChange(fn func()) {
+	t.mu.Lock()
+	t.observers = append(t.observers, fn)
+	t.mu.Unlock()
+}
+
 // Stats returns counters for the footer.
 func (t *Todos) Stats() Stats {
 	t.mu.Lock()
@@ -205,11 +215,15 @@ func (t *Todos) Stats() Stats {
 func (t *Todos) Save() {
 	t.mu.Lock()
 	data, err := json.MarshalIndent(storeFile{Version: storeVersion, Items: t.items}, "", "  ")
+	observers := slices.Clone(t.observers)
 	t.mu.Unlock()
 	if err != nil {
 		return
 	}
 	t.atomicWrite(data)
+	for _, fn := range observers {
+		fn()
+	}
 }
 
 func (t *Todos) atomicWrite(data []byte) {

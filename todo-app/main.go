@@ -202,8 +202,38 @@ func (a *appState) checkUpdate(win *mygo.Window) {
 	}()
 }
 
+// statsView draws the stats window. It redraws itself whenever a store
+// change pushes a frame through statsWin.Update.
+func (a *appState) statsView(c *ui.Context) {
+	t := c.Theme()
+	s := a.store.Stats()
+	ui.Column(c).Fill().Padding(20).Gap(12).Children(func() {
+		ui.Text(c, "统计").FontSize(16).Bold()
+		ui.Textf(c, "全部 %d", s.Total).FontSize(26).Bold()
+		ui.Textf(c, "进行中 %d", s.Active).FontSize(26).Bold().TextColor(t.TextMuted)
+		ui.Textf(c, "已完成 %d", s.Done).FontSize(26).Bold().TextColor(t.TextMuted)
+	})
+}
+
 // mainWin is the window a second instance's launch brings to the front.
 var mainWin *mygo.Window
+
+// statsWin is the second window; it mirrors the store and refreshes
+// through the store's change notification.
+var statsWin *mygo.Window
+
+func openStatsWin(a *appState) {
+	if statsWin != nil {
+		statsWin.Focus()
+		return
+	}
+	statsWin = mygo.NewWindow(mygo.WindowOptions{
+		Title:   "统计",
+		Width:   220,
+		Height:  260,
+		Content: ui.View(a.statsView),
+	})
+}
 
 func main() {
 	if !mygo.App.RequestSingleInstanceLock() {
@@ -215,6 +245,12 @@ func main() {
 	}
 	a := &appState{store: store, selected: -1}
 	a.list.Selected = &a.selected
+	// A change saved from any thread pushes the stats window a new frame.
+	store.OnChange(func() {
+		if statsWin != nil {
+			statsWin.Update(func() {})
+		}
+	})
 	mygo.App.OnSecondInstance(func(args []string, workingDir string) {
 		if mainWin != nil {
 			mainWin.Restore()
@@ -226,6 +262,9 @@ func main() {
 			{Label: "文件", Submenu: []*mygo.MenuItem{
 				{Label: "检查更新…", Accelerator: "CmdOrCtrl+U", Click: func(*mygo.MenuItem, *mygo.Window) {
 					a.checkUpdate(mainWin)
+				}},
+				{Label: "统计窗口", Click: func(*mygo.MenuItem, *mygo.Window) {
+					openStatsWin(a)
 				}},
 				mygo.Separator(),
 				{Role: mygo.RoleQuit},
