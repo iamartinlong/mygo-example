@@ -8,6 +8,7 @@ mygo 原生 UI 模式的桌面 todo 应用：窗口由 Go 直接 GPU 绘制，�
 - 复选框勾选完成，✕ 删除，Clear done 清除已完成
 - All / Active / Done 分段筛选；页脚统计（总数 / active / done）
 - JSON 持久化，跨运行保留；完成项沉底
+- 单实例：再次启动把已运行的窗口还原并聚焦，自身退出（`RequestSingleInstanceLock` + `OnSecondInstance`，锁按应用名 + identifier 识别）
 
 ## 构建 / 运行 / 测试
 

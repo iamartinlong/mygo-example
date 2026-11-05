@@ -105,14 +105,26 @@ func (a *appState) add() {
 	}
 }
 
+// mainWin is the window a second instance's launch brings to the front.
+var mainWin *mygo.Window
+
 func main() {
+	if !mygo.App.RequestSingleInstanceLock() {
+		return // the running instance takes over
+	}
 	store, err := OpenStore()
 	if err != nil {
 		log.Fatal(err)
 	}
 	a := &appState{store: store}
+	mygo.App.OnSecondInstance(func(args []string, workingDir string) {
+		if mainWin != nil {
+			mainWin.Restore()
+			mainWin.Focus()
+		}
+	})
 	mygo.App.WhenReady(func() {
-		mygo.NewWindow(mygo.WindowOptions{
+		mainWin = mygo.NewWindow(mygo.WindowOptions{
 			Title:   "Todos",
 			Width:   460,
 			Height:  640,

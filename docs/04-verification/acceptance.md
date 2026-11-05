@@ -43,6 +43,13 @@ cd _research/mygo && go run ./cmd/mygo build ../../todo-app
 - `todo-app/build/windows-amd64/Todo Native.exe`（10,668,544 B）：烟测启动正常，进程存活
 - `todo-app/build/windows-amd64/todo-native-setup-0.1.0-amd64.exe`（3,387,511 B，NSIS）：已产出，未实际安装（会改系统状态：%LOCALAPPDATA%、开始菜单、卸载项）
 
+## 单实例验证（0.1.1）
+
+- 用户反馈可打开多个实例 → main.go 加 `RequestSingleInstanceLock()` + `OnSecondInstance`（Restore + Focus）
+- 实测：dev exe 连续启动两次，进程列表只剩 1 个，第二个实例自动退出
+- 重打包 0.1.1：`Todo Native.exe` 9.7 MB、`todo-native-setup-0.1.1-amd64.exe` 4.5 MB
+- 注意：dev 运行与安装版的锁互相独立（锁按名称 + identifier 识别，安装版才有 identifier）
+
 ## 图标验证（第二次打包）
 
 - 首次打包未配图标（`mygo.json` 无 `icon`，`resources/icon.png` 不存在），安装后无图标——已补 1024×1024 图标至 `todo-app/resources/icon.png`（ImageGen 生成，去除水印后入库）
