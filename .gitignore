@@ -4,6 +4,7 @@ _research/
 # 构建产物
 *.exe
 todo-app/todo-app
+todo-app/build/
 
 # 截图含桌面个人信息，仅本地留存
 todo-app/*.png

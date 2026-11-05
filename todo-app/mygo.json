@@ -1,0 +1,6 @@
+{
+  "name": "Todo Native",
+  "identifier": "dev.martinlong.todo-native",
+  "version": "0.1.0",
+  "out": "build"
+}

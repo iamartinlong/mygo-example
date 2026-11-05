@@ -29,6 +29,21 @@ go test ./...                 # 存储层测试
 | `store.go` | `Todos` 存储：互斥锁保护内存列表，`Save()` 同步写 `%APPDATA%\Todo Native\todos.json` |
 | `store_test.go` | 持久化往返、增删清测试（写入是异步时序敏感的，测试等待文件内容匹配） |
 
+## 打包（安装包）
+
+`mygo build`（mygo-cli，在 `_research/mygo` 克隆内运行）产出免安装 exe + NSIS 安装器：
+
+```sh
+cd _research/mygo
+go run ./cmd/mygo build ../../todo-app
+```
+
+- 配置：`todo-app/mygo.json`（name / identifier / version / out）
+- 产物在 `todo-app/build/windows-amd64/`：`Todo Native.exe`（~9.5 MB，带图标/版本信息/按显示器 DPI manifest，无控制台窗口）+ `todo-native-setup-0.1.0-amd64.exe`（~3.2 MB）
+- 安装器装到 `%LOCALAPPDATA%\Programs\Todo Native`（当前用户，免管理员），含开始菜单快捷方式、卸载项、自更新支持；静默安装 `/S`
+- NSIS 未安装时，mygo 首次需要会自动下载官方 NSIS 3.13 zip（SHA-256 校验后存于 `%LOCALAPPDATA%\mygo`）
+- 跨平台：`-platform darwin/universal,windows/amd64,linux/amd64,...`；macOS/Linux 上打 Windows 安装包需自装 NSIS
+
 ## 数据位置
 
 - Windows：`%APPDATA%\Todo Native\todos.json`

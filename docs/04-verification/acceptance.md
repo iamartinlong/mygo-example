@@ -33,6 +33,16 @@ go test ./... -count=5
 3. 复选框绑定到切片副本内部 → 局部变量绑定 + `SetDone` 显式写回
 4. 单数复数："1 items" → "1 item"
 
+## 打包验证
+
+```sh
+cd _research/mygo && go run ./cmd/mygo build ../../todo-app
+# ✓ Compiled windows/amd64 5.7s；✓ Built Todo Native 0.1.0 in 12.7s（一次通过）
+```
+
+- `todo-app/build/windows-amd64/Todo Native.exe`（10,668,544 B）：烟测启动正常，进程存活
+- `todo-app/build/windows-amd64/todo-native-setup-0.1.0-amd64.exe`（3,387,511 B，NSIS）：已产出，未实际安装（会改系统状态：%LOCALAPPDATA%、开始菜单、卸载项）
+
 ## 体积
 
 - `todo-app.exe`（调试）：14.8 MB
