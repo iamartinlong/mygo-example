@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"strings"
 
-	"reqbox-desktop/internal/store"
+	"reqbox-desktop/pkg/store"
 )
 
 // SettingAuthToken is the settings key holding the SHA-256 of the access token.

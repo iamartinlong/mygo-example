@@ -6,14 +6,27 @@ package main
 
 import (
 	"log"
+	"path/filepath"
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
+	"reqbox-desktop/pkg/store"
 )
 
 type app struct {
 	dark    bool    // follows the web .dark variant; a toggle arrives in B13
 	sidebar float32 // sidebar width in DIPs, ui.Split drags it
+
+	st         *store.Store
+	reqs       []store.Request
+	cols       []store.Collection
+	rows       []sideRow
+	list       ui.ListState
+	selRow     int // ui.List choice; -1 none
+	selectedID string
+	filter     string
+	lastFilter string
+	pending    pending
 }
 
 func (a *app) view(c *ui.Context) {
@@ -47,16 +60,6 @@ func (a *app) topBar(c *ui.Context, p palette) {
 	})
 }
 
-func (a *app) sidebarPane(c *ui.Context, p palette) {
-	ui.Column(c).Fill().Background(p.background.color()).Children(func() {
-		// eyebrow, as the web sidebar's section headers; the list is B2
-		ui.Row(c).Padding(12, 12, 6, 12).Children(func() {
-			ui.Text(c, "REQUESTS").FontSize(10).LetterSpacing(0.8).
-				TextColor(p.mutedFg.color())
-		})
-	})
-}
-
 func (a *app) mainPane(c *ui.Context, p palette) {
 	// workspace empty-state frame; its copy lands with the send flow (B5)
 	ui.Column(c).Fill().Background(p.card.color()).AlignItems(ui.Center)
@@ -65,6 +68,15 @@ func (a *app) mainPane(c *ui.Context, p palette) {
 func main() {
 	a := &app{sidebar: 260}
 	mygo.App.WhenReady(func() {
+		dir, err := mygo.App.Path(mygo.PathUserData)
+		if err == nil {
+			a.st, err = store.Open(filepath.Join(dir, "reqbox.db"))
+		}
+		if err != nil {
+			log.Printf("store: %v", err)
+		}
+		a.refresh()
+
 		mygo.NewWindow(mygo.WindowOptions{
 			Title:     "Reqbox",
 			Width:     1280,

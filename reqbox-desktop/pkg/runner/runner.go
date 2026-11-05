@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"reqbox-desktop/internal/store"
+	"reqbox-desktop/pkg/store"
 )
 
 // Opts tunes a single call. Zero values fall back to defaults.

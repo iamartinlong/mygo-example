@@ -9,8 +9,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"reqbox-desktop/internal/runner"
-	"reqbox-desktop/internal/store"
+	"reqbox-desktop/pkg/runner"
+	"reqbox-desktop/pkg/store"
 )
 
 // execOptions mirrors the UI's send settings. The booleans are pointers so an

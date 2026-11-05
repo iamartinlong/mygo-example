@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"reqbox-desktop/internal/store"
+	"reqbox-desktop/pkg/store"
 )
 
 // newAuthServer builds a handler with auth enabled and returns the token.

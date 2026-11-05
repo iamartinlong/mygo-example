@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"strings"
 
-	"reqbox-desktop/internal/runner"
-	"reqbox-desktop/internal/store"
+	"reqbox-desktop/pkg/runner"
+	"reqbox-desktop/pkg/store"
 )
 
 // api bundles the dependencies shared by all handlers.

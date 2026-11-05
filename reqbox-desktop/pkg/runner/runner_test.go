@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"reqbox-desktop/internal/store"
+	"reqbox-desktop/pkg/store"
 )
 
 func TestResolve(t *testing.T) {

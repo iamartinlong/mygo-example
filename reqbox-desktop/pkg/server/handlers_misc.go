@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"reqbox-desktop/internal/store"
+	"reqbox-desktop/pkg/store"
 )
 
 func (a *api) handleListHistory(w http.ResponseWriter, r *http.Request) {

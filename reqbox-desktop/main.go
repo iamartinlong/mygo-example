@@ -16,8 +16,8 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/plugins/updater"
 
-	"reqbox-desktop/internal/server"
-	"reqbox-desktop/internal/store"
+	"reqbox-desktop/pkg/server"
+	"reqbox-desktop/pkg/store"
 )
 
 // web/dist is copied from the upstream Reqbox build (pnpm build in

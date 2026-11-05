@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"reqbox-desktop/internal/store"
+	"reqbox-desktop/pkg/store"
 )
 
 func newTestServer(t *testing.T) (http.Handler, *store.Store) {

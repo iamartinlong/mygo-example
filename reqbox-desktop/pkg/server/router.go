@@ -12,8 +12,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"reqbox-desktop/internal/runner"
-	"reqbox-desktop/internal/store"
+	"reqbox-desktop/pkg/runner"
+	"reqbox-desktop/pkg/store"
 )
 
 // Version is stamped at build time via -ldflags.
