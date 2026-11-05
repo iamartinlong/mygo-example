@@ -92,12 +92,12 @@ func (a *app) pal() palette {
 func (a *app) topBar(c *ui.Context, p palette) {
 	ui.Row(c).Height(40).Padding(0, 12, 0, 12).Gap(8).
 		AlignItems(ui.Center).Children(func() {
-		ui.Text(c, "Reqbox").Bold().Grow(1)
-		ui.Text(c, "LOCAL").FontSize(9).LetterSpacing(0.6).Font("JetBrains Mono").
+		ui.Text(c, tr("app.name")).Bold().Grow(1)
+		ui.Text(c, tr("app.local")).FontSize(9).LetterSpacing(0.6).Font("JetBrains Mono").
 			TextColor(p.mutedFg.color())
 		ui.Row(c).Gap(5).AlignItems(ui.Center).Children(func() {
 			ui.Column(c).Width(7).Height(7).Background(p.ok.color())
-			ui.Text(c, "server online").FontSize(11).TextColor(p.mutedFg.color())
+			ui.Text(c, tr("app.online")).FontSize(11).TextColor(p.mutedFg.color())
 		})
 	})
 }
@@ -105,7 +105,11 @@ func (a *app) topBar(c *ui.Context, p palette) {
 func main() {
 	a := &app{sidebar: 260, sideTab: "requests",
 		run: runState{timeout: "30", follow: true, verify: true}}
+	// Before Run: startLocale computes the shown locale with the languages
+	// set at that point, so ours must be in before it does.
+	mygo.App.SetLanguages("en", "zh-Hans")
 	mygo.App.WhenReady(func() {
+		initLanguages()
 		a.exec = runner.New()
 		dir, err := mygo.App.Path(mygo.PathUserData)
 		if err == nil {

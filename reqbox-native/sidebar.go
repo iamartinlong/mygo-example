@@ -66,7 +66,7 @@ func (a *app) rebuildRows() {
 		}
 	}
 	if needle == "" || len(unsorted) > 0 {
-		add("", "UNSORTED", unsorted)
+		add("", tr("sidebar.unsorted"), unsorted)
 	}
 	a.rows = rows
 	a.selRow = -1
@@ -93,28 +93,28 @@ func (a *app) applyPending() {
 	p := &a.pending
 	switch {
 	case p.newRequest:
-		a.st.CreateRequest(store.Request{Name: "New request", Method: "GET"})
-		a.toastOK("Request created")
+		a.st.CreateRequest(store.Request{Name: tr("sidebar.newRequest"), Method: "GET"})
+		a.toastOK(tr("toast.requestCreated"))
 	case p.newCollection:
-		a.st.CreateCollection("New collection")
-		a.toastOK("Collection created")
+		a.st.CreateCollection(tr("sidebar.newCollection"))
+		a.toastOK(tr("toast.collectionCreated"))
 	case p.deleteReq != "":
 		a.st.DeleteRequest(p.deleteReq)
 		if a.selectedID == p.deleteReq {
 			a.selectedID = ""
 		}
-		a.toastOK("Request deleted")
+		a.toastOK(tr("toast.requestDeleted"))
 	case p.deleteCol != "":
 		a.st.DeleteCollection(p.deleteCol)
-		a.toastOK("Collection deleted")
+		a.toastOK(tr("toast.collectionDeleted"))
 	case p.deleteHist != "":
 		a.st.DeleteHistory(p.deleteHist)
 	case p.clearHist:
 		a.st.ClearHistory()
-		a.toastOK("History cleared")
+		a.toastOK(tr("toast.historyCleared"))
 	case p.duplicate != "":
 		if dup, err := a.st.DuplicateRequest(p.duplicate); err == nil {
-			a.toastOK(`Duplicated as "` + dup.Name + `"`)
+			a.toastOK(tr("toast.duplicated", "name", dup.Name))
 		}
 	case p.rename != "":
 		if r, err := a.st.GetRequest(p.rename); err == nil {
@@ -135,8 +135,8 @@ func (a *app) sidebarPane(c *ui.Context, p palette) {
 	ui.Column(c).Fill().Background(p.panel.color()).Children(func() {
 		a.envRow(c, p)
 		ui.Row(c).Padding(8, 12, 8, 12).Gap(8).AlignItems(ui.Center).Children(func() {
-			a.pill(c, p, "Requests", len(a.reqs), "requests")
-			a.pill(c, p, "History", len(a.hist), "history")
+			a.pill(c, p, tr("sidebar.requests"), len(a.reqs), "requests")
+			a.pill(c, p, tr("sidebar.history"), len(a.hist), "history")
 		})
 		a.filterRow(c, p)
 		if a.st == nil {
@@ -167,8 +167,7 @@ func (a *app) sidebarPane(c *ui.Context, p palette) {
 func (a *app) historyPane(c *ui.Context, p palette) {
 	if len(a.hist) == 0 {
 		ui.Column(c).Grow(1).Padding(12, 12, 0, 12).Children(func() {
-			ui.Text(c, "Runs show up here, with the exact request that "+
-				"produced them.").FontSize(11.5).TextColor(p.mutedFg.color())
+			ui.Text(c, tr("sidebar.noHistory")).FontSize(11.5).TextColor(p.mutedFg.color())
 		})
 		return
 	}
@@ -182,12 +181,12 @@ func (a *app) historyPane(c *ui.Context, p palette) {
 	a.applyPending()
 	ui.Row(c).Height(34).Padding(0, 12, 0, 12).AlignItems(ui.Center).
 		Children(func() {
-		e := ui.Text(c, "Clear all").FontSize(11.5).SingleLine().
+		e := ui.Text(c, tr("sidebar.clearAll")).FontSize(11.5).SingleLine().
 			TextColor(p.bad.color())
 		if e.Clicked() {
-			a.askConfirm("Clear all history?",
-				"Every recorded run is removed. This cannot be undone.",
-				"Clear history", func() { a.pending.clearHist = true })
+			a.askConfirm(tr("confirm.clearHistory.title"),
+				tr("confirm.clearHistory.desc"),
+				tr("confirm.clearHistory.confirm"), func() { a.pending.clearHist = true })
 			a.applyPending()
 		}
 	})
@@ -217,14 +216,14 @@ func (a *app) histRowView(c *ui.Context, p palette, i int) {
 				ui.Text(c, strconv.Itoa(h.Status)).FontSize(10.5).
 					Font("JetBrains Mono").SingleLine().TextColor(p.ok.color())
 			} else {
-				ui.Text(c, "failed").FontSize(10.5).SingleLine().
+				ui.Text(c, tr("common.failed")).FontSize(10.5).SingleLine().
 					TextColor(p.bad.color())
 			}
 			ui.Text(c, timeAgo(h.CreatedAt.Time)).FontSize(10.5).SingleLine().
 				TextColor(p.mutedFg.color())
 		})
 	}).ContextMenu(func(m *ui.Menu) {
-		if m.Item("Delete history entry").Chosen() {
+		if m.Item(tr("sidebar.deleteHistoryEntry")).Chosen() {
 			a.pending.deleteHist = h.ID
 		}
 	})
@@ -291,10 +290,11 @@ func (a *app) sideRowView(c *ui.Context, p palette, i int) {
 			ui.Text(c, row.title).FontSize(10).LetterSpacing(0.8).
 				SingleLine().TextColor(p.mutedFg.color())
 		}).ContextMenu(func(m *ui.Menu) {
-			if row.colID != "" && m.Item("Delete").Chosen() {
-				a.askConfirm(`Delete "`+row.title+`"`,
-					"Requests inside this collection are kept and move to Unsorted.",
-					"Delete collection", func() { a.pending.deleteCol = row.colID })
+			if row.colID != "" && m.Item(tr("common.delete")).Chosen() {
+				a.askConfirm(tr("confirm.deleteCollection.title", "name", row.title),
+					tr("confirm.deleteCollection.desc"),
+					tr("confirm.deleteCollection.confirm"),
+					func() { a.pending.deleteCol = row.colID })
 			}
 		})
 		return
@@ -322,14 +322,14 @@ func (a *app) sideRowView(c *ui.Context, p palette, i int) {
 				SingleLine().TextColor(p.mutedFg.color())
 		})
 	}).ContextMenu(func(m *ui.Menu) {
-		if m.Item("Duplicate").Chosen() {
+		if m.Item(tr("sidebar.duplicate")).Chosen() {
 			a.pending.duplicate = r.ID
 		}
 		m.Separator()
-		if m.Item("Delete").Chosen() {
-			a.askConfirm(`Delete "`+r.Name+`"`,
-				"Past runs of this request stay in History.",
-				"Delete request", func() { a.pending.deleteReq = r.ID })
+		if m.Item(tr("common.delete")).Chosen() {
+			a.askConfirm(tr("confirm.deleteRequest.title", "name", r.Name),
+				tr("confirm.deleteRequest.desc"),
+				tr("confirm.deleteRequest.confirm"), func() { a.pending.deleteReq = r.ID })
 		}
 	})
 }

@@ -27,7 +27,7 @@ func (a *app) confirmDialog(c *ui.Context, p palette) {
 				TextColor(p.mutedFg.color())
 			ui.Row(c).Height(30).Gap(10).AlignItems(ui.Center).Children(func() {
 				ui.Row(c).Grow(1)
-				e := btnSecondary(c, p, "Cancel")
+				e := btnSecondary(c, p, tr("common.cancel"))
 				if e.Clicked() {
 					a.confirm.open = false
 				}

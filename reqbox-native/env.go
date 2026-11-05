@@ -30,7 +30,7 @@ func (a *app) envLabel() string {
 			return e.Name
 		}
 	}
-	return "No environment"
+	return tr("sidebar.noEnvironmentPlaceholder")
 }
 
 func (a *app) setActiveEnv(id string) {
@@ -70,7 +70,7 @@ func (a *app) envRow(c *ui.Context, p palette) {
 		panel.MinWidth(200).Padding(4).Background(p.card.color()).
 			Radius(6).Border(1, p.border.color())
 		it := sel.Item("").Padding(6, 10)
-		it.Children(func() { ui.Text(c, "No environment").FontSize(12) })
+		it.Children(func() { ui.Text(c, tr("sidebar.noEnvironmentPlaceholder")).FontSize(12) })
 		for _, e := range a.envs {
 			it = sel.Item(e.ID).Padding(6, 10)
 			it.Children(func(name string) func() {
@@ -79,7 +79,7 @@ func (a *app) envRow(c *ui.Context, p palette) {
 		}
 		it = sel.Item(envManageKey).Padding(6, 10)
 		it.Children(func() {
-			ui.Text(c, "Manage environments…").FontSize(12).
+			ui.Text(c, tr("sidebar.manageEnv")).FontSize(12).
 				TextColor(p.accent.color())
 		})
 	})
@@ -111,16 +111,16 @@ func (a *app) envListPane(c *ui.Context, p palette) {
 	ui.Column(c).Width(440).Padding(16, 20, 16, 20).Gap(10).
 		Background(p.card.color()).Radius(8).Children(func() {
 		ui.Row(c).Height(30).AlignItems(ui.Center).Children(func() {
-			ui.Text(c, "Manage environments").Bold().Grow(1)
-			e := btnSecondary(c, p, "Close")
+			ui.Text(c, tr("env.title")).Bold().Grow(1)
+			e := btnSecondary(c, p, tr("common.close"))
 			if e.Clicked() {
 				a.envMgr = false
 			}
 		})
-		ui.Text(c, "Active environment applies to every request you send.").
+		ui.Text(c, tr("env.footer")).
 			FontSize(11.5).TextColor(p.mutedFg.color())
 		if len(a.envs) == 0 {
-			ui.Text(c, "No environments yet.").FontSize(12).
+			ui.Text(c, tr("env.noEnvironments")).FontSize(12).
 				TextColor(p.mutedFg.color())
 		}
 		for _, env := range a.envs {
@@ -136,21 +136,26 @@ func (a *app) envListPane(c *ui.Context, p palette) {
 				if e.Clicked() {
 					a.openEnvEdit(env.ID)
 				}
-				e = ui.Text(c, "Delete").FontSize(11.5).
+				e = ui.Text(c, tr("common.delete")).FontSize(11.5).
 					TextColor(p.bad.color())
 				if e.Clicked() {
-					a.askConfirm(`Delete "`+env.Name+`"`,
-						"Its variables are removed with it.",
-						"Delete environment", func() { a.deleteEnv(env.ID) })
+					title := tr("confirm.deleteEnvironment.title", "name", env.Name)
+					desc := tr("confirm.deleteEnvironment.desc")
+					if env.ID == a.activeEnv {
+						desc = tr("confirm.deleteEnvironment.descActive")
+					}
+					id := env.ID
+					a.askConfirm(title, desc,
+						tr("confirm.deleteEnvironment.confirm"), func() { a.deleteEnv(id) })
 				}
 			})
 		}
-		e := btnPrimary(c, p, "New environment")
+		e := btnPrimary(c, p, tr("env.newEnvironment"))
 		if e.Clicked() {
-			if env, err := a.st.CreateEnvironment("New environment", nil); err == nil {
+			if env, err := a.st.CreateEnvironment(tr("env.newEnvironment"), nil); err == nil {
 				a.loadEnvs()
 				a.openEnvEdit(env.ID)
-				a.toastOK("Environment created")
+				a.toastOK(tr("toast.environmentCreated"))
 			}
 		}
 	})
@@ -164,10 +169,10 @@ func (a *app) envEditPane(c *ui.Context, p palette) {
 			if e.Clicked() {
 				a.envEditID = ""
 			}
-			ui.TextInput(c, &a.envEditName).Grow(1).Height(28).FontSize(13)
+			ui.TextInput(c, &a.envEditName).Grow(1).Height(28).FontSize(13).
+				Placeholder(tr("env.namePlaceholder"))
 		})
-		ui.Text(c, "Use {{variable}} anywhere in the URL, headers or body "+
-			"to pull a value from the active environment.").FontSize(11.5).
+		ui.Text(c, tr("auth.variableHint")).FontSize(11.5).
 			TextColor(p.mutedFg.color())
 		for i := range a.envEditVars {
 			i := i
@@ -191,27 +196,30 @@ func (a *app) envEditPane(c *ui.Context, p palette) {
 			})
 		}
 		if len(a.envEditVars) == 0 {
-			ui.Text(c, "No variables yet.").FontSize(11.5).
+			ui.Text(c, tr("env.noVariables")).FontSize(11.5).
 				TextColor(p.mutedFg.color())
 		}
-		e := btnSecondary(c, p, "Add variable")
+		e := btnSecondary(c, p, tr("env.addVariable"))
 		if e.Clicked() {
 			a.envEditVars = append(a.envEditVars, envVarEdit{enabled: true})
 		}
 		ui.Row(c).Height(32).Gap(10).AlignItems(ui.Center).Children(func() {
-			e := ui.Text(c, "Delete environment").FontSize(12).
+			e := ui.Text(c, tr("env.deleteEnv")).FontSize(12).
 				TextColor(p.bad.color())
 			if e.Clicked() {
 				id := a.envEditID
-				a.askConfirm(`Delete "`+a.envEditName+`"`,
-					"Its variables are removed with it.",
-					"Delete environment", func() {
+				desc := tr("confirm.deleteEnvironment.desc")
+				if id == a.activeEnv {
+					desc = tr("confirm.deleteEnvironment.descActive")
+				}
+				a.askConfirm(tr("confirm.deleteEnvironment.title", "name", a.envEditName),
+					desc, tr("confirm.deleteEnvironment.confirm"), func() {
 						a.deleteEnv(id)
 						a.envMgr = false
 					})
 			}
 			ui.Row(c).Grow(1)
-			e = btnPrimary(c, p, "Save")
+			e = btnPrimary(c, p, tr("common.save"))
 			if e.Clicked() {
 				a.saveEnvEdit()
 			}
@@ -246,7 +254,7 @@ func (a *app) saveEnvEdit() {
 	if _, err := a.st.UpdateEnvironment(a.envEditID, a.envEditName, vars); err == nil {
 		a.loadEnvs()
 		a.envEditID = ""
-		a.toastOK("Environment saved")
+		a.toastOK(tr("toast.environmentSaved"))
 	}
 }
 
@@ -257,7 +265,7 @@ func (a *app) deleteEnv(id string) {
 	}
 	a.envEditID = ""
 	a.loadEnvs()
-	a.toastOK("Environment deleted")
+	a.toastOK(tr("toast.environmentDeleted"))
 }
 
 // btnSecondary is a small neutral button, as the web's ghost buttons.

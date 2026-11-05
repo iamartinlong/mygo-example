@@ -114,9 +114,9 @@ func (a *app) emptyState(c *ui.Context, p palette) {
 }
 
 func (a *app) titleRow(c *ui.Context, p palette) {
-	status := "saved"
+	status := tr("bar.saved")
 	if a.edit.dirty {
-		status = "unsaved"
+		status = tr("bar.unsavedChanges")
 	}
 	ui.Row(c).Height(44).Padding(0, 16, 0, 16).Gap(10).
 		AlignItems(ui.Center).Children(func() {
@@ -133,7 +133,7 @@ func (a *app) titleRow(c *ui.Context, p palette) {
 func (a *app) saveBtn(c *ui.Context, p palette) {
 	e := ui.Row(c).Height(28).Padding(0, 14, 0, 14).Gap(6).
 		AlignItems(ui.Center).Background(p.foreground.color()).Children(func() {
-		ui.Text(c, "Save").FontSize(12).SingleLine().TextColor(p.primaryFg.color())
+		ui.Text(c, tr("bar.save")).FontSize(12).SingleLine().TextColor(p.primaryFg.color())
 	})
 	if e.Clicked() {
 		a.saveEdit()
@@ -149,7 +149,7 @@ func (a *app) saveEdit() {
 		return
 	}
 	if strings.TrimSpace(a.edit.url) == "" {
-		a.toastErr("Add a URL before saving")
+		a.toastErr(tr("toast.addUrlFirst"))
 		return
 	}
 	r.Name, r.Method, r.URL = a.edit.name, a.edit.method, a.edit.url
@@ -161,9 +161,9 @@ func (a *app) saveEdit() {
 		a.bodyBuf.MarkSaved()
 		a.edit.dirty = false
 		a.refresh()
-		a.toastOK("Request saved")
+		a.toastOK(tr("toast.requestSaved"))
 	} else {
-		a.toastErr("Could not save")
+		a.toastErr(tr("toast.cannotSave"))
 	}
 }
 
@@ -173,7 +173,7 @@ func (a *app) requestBar(c *ui.Context, p palette) {
 		if ui.Select(c, &a.edit.method, methods).Width(112).Height(30).Changed() {
 			a.edit.dirty = true
 		}
-		if ui.TextInput(c, &a.edit.url).Placeholder("http://localhost:8080/path").
+		if ui.TextInput(c, &a.edit.url).Placeholder(tr("bar.urlPlaceholder")).
 			Grow(1).Height(30).FontSize(12.5).Changed() {
 			a.edit.dirty = true
 		}
@@ -196,7 +196,7 @@ func (a *app) sendBtn(c *ui.Context, p palette) {
 				SingleLine().TextColor(p.primaryFg.color())
 		} else {
 			ui.Icon(c, iconSend).Size(13, 13).TextColor(p.primaryFg.color())
-			ui.Text(c, "SEND").FontSize(11.5).Bold().LetterSpacing(0.5).
+			ui.Text(c, tr("bar.send")).FontSize(11.5).Bold().LetterSpacing(0.5).
 				SingleLine().TextColor(p.primaryFg.color())
 		}
 	})
@@ -210,7 +210,7 @@ func (a *app) fullURLRow(c *ui.Context, p palette) {
 		AlignItems(ui.Center).Children(func() {
 		e := ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
 			ui.Icon(c, iconChevronRt).Size(11, 11).TextColor(p.mutedFg.color())
-			ui.Text(c, "full URL").FontSize(11).SingleLine().
+			ui.Text(c, tr("bar.fullUrl")).FontSize(11).SingleLine().
 				TextColor(p.mutedFg.color())
 		})
 		if e.Clicked() {
@@ -234,7 +234,7 @@ func (a *app) fullURLRow(c *ui.Context, p palette) {
 
 // curlRow holds the cURL copy and Delete actions plus the collection label.
 func (a *app) curlRow(c *ui.Context, p palette) {
-	label := "Unsorted"
+	label := tr("sidebar.unsorted")
 	for _, col := range a.cols {
 		if col.ID == a.edit.colID {
 			label = col.Name
@@ -243,24 +243,29 @@ func (a *app) curlRow(c *ui.Context, p palette) {
 	ui.Row(c).Height(28).Padding(0, 16, 0, 16).Gap(12).
 		AlignItems(ui.Center).Children(func() {
 		e := ui.Row(c).Children(func() {
-			ui.Text(c, "cURL").FontSize(11.5).Font("JetBrains Mono").
+			ui.Text(c, tr("bar.curl")).FontSize(11.5).Font("JetBrains Mono").
 				SingleLine().TextColor(p.foreground.color())
 		})
 		if e.Clicked() {
 			mygo.Clipboard.WriteText(curlFor(a.edit.method, a.edit.url, a.edit.params))
 		}
 		e = ui.Row(c).Children(func() {
-			ui.Text(c, "Delete").FontSize(11.5).SingleLine().TextColor(p.bad.color())
+			ui.Text(c, tr("common.delete")).FontSize(11.5).SingleLine().TextColor(p.bad.color())
 		})
 		if e.Clicked() {
-			a.askConfirm(`Delete "`+a.edit.name+`"`,
-				"Past runs of this request stay in History.",
-				"Delete request", func() { a.pending.deleteReq = a.edit.id })
+			a.askConfirm(tr("confirm.deleteRequest.title", "name", a.edit.name),
+				tr("confirm.deleteRequest.desc"),
+				tr("confirm.deleteRequest.confirm"), func() { a.pending.deleteReq = a.edit.id })
 		}
 		ui.Row(c).Grow(1).Children(func() {
 			ui.Text(c, label).FontSize(11).SingleLine().TextColor(p.mutedFg.color())
 		})
 	})
+}
+
+var tabKeys = map[string]string{
+	"Params": "tabs.params", "Headers": "tabs.headers", "Body": "tabs.body",
+	"Auth": "tabs.auth", "Publish": "tabs.publish",
 }
 
 func (a *app) tabStrip(c *ui.Context, p palette) {
@@ -274,7 +279,7 @@ func (a *app) tabStrip(c *ui.Context, p palette) {
 				row = row.Background(p.card.color())
 			}
 			e := row.Children(func() {
-				ui.Text(c, t).FontSize(12).SingleLine()
+				ui.Text(c, tr(tabKeys[t])).FontSize(12).SingleLine()
 			})
 			if e.Clicked() {
 				a.edit.tab = t
@@ -284,14 +289,19 @@ func (a *app) tabStrip(c *ui.Context, p palette) {
 }
 
 // kvEditor edits one KV list: column eyebrows, then rows of
-// checkbox + key + value + delete.
+// checkbox + key + value + delete. what is the kv.* noun: parameter,
+// header or field; its add-row label has its own key.
+var kvAddKey = map[string]string{
+	"parameter": "kv.addQueryParam", "header": "kv.addHeader", "field": "kv.addFormField",
+}
+
 func (a *app) kvEditor(c *ui.Context, p palette, what string, kvs *[]store.KV) {
 	ui.Row(c).Height(30).Padding(0, 16, 0, 16).Gap(8).
 		AlignItems(ui.Center).Children(func() {
 		ui.Row(c).Width(24)
-		ui.Text(c, strings.ToUpper(what)).FontSize(10).LetterSpacing(0.8).
+		ui.Text(c, strings.ToUpper(tr("kv."+what))).FontSize(10).LetterSpacing(0.8).
 			SingleLine().TextColor(p.mutedFg.color()).Grow(2)
-		ui.Text(c, "VALUE").FontSize(10).LetterSpacing(0.8).
+		ui.Text(c, strings.ToUpper(tr("kv.value"))).FontSize(10).LetterSpacing(0.8).
 			SingleLine().TextColor(p.mutedFg.color()).Grow(3)
 		ui.Row(c).Width(24)
 	})
@@ -302,7 +312,7 @@ func (a *app) kvEditor(c *ui.Context, p palette, what string, kvs *[]store.KV) {
 			if ui.Checkbox(c, &(*kvs)[i].Enabled, "").Changed() {
 				a.edit.dirty = true
 			}
-			if ui.TextInput(c, &(*kvs)[i].Key).Placeholder(what).
+			if ui.TextInput(c, &(*kvs)[i].Key).Placeholder(tr("kv.key")).
 				Grow(2).Height(28).FontSize(12).Changed() {
 				a.edit.dirty = true
 			}
@@ -325,7 +335,7 @@ func (a *app) kvEditor(c *ui.Context, p palette, what string, kvs *[]store.KV) {
 			Background(p.background.color()).Children(func() {
 			ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
 				ui.Icon(c, iconPlus).Size(12, 12).TextColor(p.mutedFg.color())
-				ui.Text(c, "Add a "+what).FontSize(12).SingleLine().
+				ui.Text(c, tr(kvAddKey[what])).FontSize(12).SingleLine().
 					TextColor(p.mutedFg.color())
 			})
 		})

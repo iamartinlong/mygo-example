@@ -187,12 +187,12 @@ func (a *app) resetRespBuf() {
 func (a *app) runBar(c *ui.Context, p palette) {
 	ui.Row(c).Height(44).Padding(0, 16, 0, 16).Gap(10).
 		AlignItems(ui.Center).Children(func() {
-		ui.Text(c, "Timeout").FontSize(12).SingleLine().
+		ui.Text(c, tr("run.timeout")).FontSize(12).SingleLine().
 			TextColor(p.mutedFg.color())
 		ui.TextInput(c, &a.run.timeout).Width(56).Height(28).FontSize(12)
-		ui.Text(c, "s").FontSize(12).SingleLine().TextColor(p.mutedFg.color())
-		ui.Checkbox(c, &a.run.follow, "Follow redirects")
-		ui.Checkbox(c, &a.run.verify, "Verify TLS certificates")
+		ui.Text(c, tr("run.seconds")).FontSize(12).SingleLine().TextColor(p.mutedFg.color())
+		ui.Checkbox(c, &a.run.follow, tr("run.followRedirects"))
+		ui.Checkbox(c, &a.run.verify, tr("run.verifyTls"))
 		ui.Row(c).Grow(1)
 		ui.Text(c, a.edit.method+" · "+a.edit.authType).FontSize(10.5).
 			Font("JetBrains Mono").SingleLine().TextColor(p.mutedFg.color())
@@ -206,12 +206,11 @@ func (a *app) responsePane(c *ui.Context, p palette) {
 		Children(func() {
 		switch {
 		case a.run.running:
-			a.respCenter(c, p, "WAITING", "waiting for response…")
+			a.respCenter(c, p, "WAITING", tr("resp.waiting"))
 		case a.run.errText != "":
 			a.respFailed(c, p)
 		case a.run.resp == nil:
-			a.respCenter(c, p, "NO RESPONSE",
-				"Send the request to see status, headers and body here.")
+			a.respCenter(c, p, tr("resp.noResponse"), tr("resp.noResponseHint"))
 		default:
 			a.respBody(c, p)
 		}
@@ -231,11 +230,11 @@ func (a *app) respCenter(c *ui.Context, p palette, eyebrow, msg string) {
 func (a *app) respFailed(c *ui.Context, p palette) {
 	ui.Column(c).Grow(1).FillHeight().AlignItems(ui.Center).Children(func() {
 		ui.Row(c).Grow(1)
-		ui.Text(c, "REQUEST FAILED").FontSize(11).LetterSpacing(1).
+		ui.Text(c, tr("resp.requestFailed")).FontSize(11).LetterSpacing(1).
 			SingleLine().TextColor(p.bad.color())
 		ui.Text(c, a.run.errText).FontSize(12.5).SingleLine().
 			TextColor(p.mutedFg.color())
-		ui.Text(c, "Check the URL, DNS, or the timeout setting for this request.").
+		ui.Text(c, tr("resp.checkUrl")).
 			FontSize(12).SingleLine().TextColor(p.mutedFg.color())
 		ui.Row(c).Grow(1)
 	})
@@ -283,7 +282,7 @@ func (a *app) respBody(c *ui.Context, p palette) {
 			TextColor(p.mutedFg.color())
 		ui.Row(c).Grow(1)
 		if r.Truncated {
-			ui.Text(c, "truncated").FontSize(10.5).SingleLine().
+			ui.Text(c, tr("resp.truncated")).FontSize(10.5).SingleLine().
 				TextColor(p.warn.color())
 		}
 	})
@@ -297,12 +296,12 @@ func (a *app) respBody(c *ui.Context, p palette) {
 func (a *app) respGeneral(c *ui.Context, p palette) {
 	r := a.run.resp
 	rows := [][2]string{
-		{"Request URL", r.RequestURL},
-		{"Remote address", r.RemoteAddr},
-		{"HTTP version", r.HTTPVersion},
+		{tr("resp.requestUrl"), r.RequestURL},
+		{tr("resp.remoteAddress"), r.RemoteAddr},
+		{tr("resp.httpVersion"), r.HTTPVersion},
 	}
 	if r.FinalURL != "" && r.FinalURL != r.RequestURL {
-		rows = append(rows, [2]string{"Final URL", r.FinalURL})
+		rows = append(rows, [2]string{tr("resp.finalUrl"), r.FinalURL})
 	}
 	for _, kv := range rows {
 		if kv[1] == "" {
