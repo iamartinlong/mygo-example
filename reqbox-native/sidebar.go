@@ -83,6 +83,10 @@ func (a *app) refresh() {
 	}
 	a.reqs, _ = a.st.ListRequests()
 	a.cols, _ = a.st.ListCollections()
+	// Like the web: open the first request so the app never starts blank.
+	if a.selectedID == "" && len(a.reqs) > 0 {
+		a.selectedID = a.reqs[0].ID
+	}
 	a.rebuildRows()
 	a.hist, _ = a.st.ListHistory(a.filter, 100)
 	a.histSel = -1
@@ -144,6 +148,7 @@ func (a *app) sidebarPane(c *ui.Context, p palette) {
 		}
 		if a.sideTab == "history" {
 			a.historyPane(c, p)
+			a.footerRow(c, p)
 			return
 		}
 		a.list.Selected = &a.selRow
@@ -159,6 +164,7 @@ func (a *app) sidebarPane(c *ui.Context, p palette) {
 			a.selectedID = a.rows[a.selRow].req.ID
 		}
 		a.applyPending()
+		a.footerRow(c, p)
 	})
 }
 

@@ -49,6 +49,7 @@ type app struct {
 	envEditVars []envVarEdit
 	confirm     confirmState
 	toasts      []toastMsg
+	runDlg      bool
 
 	win      *mygo.Window
 	exec     *runner.Executor
@@ -78,6 +79,7 @@ func (a *app) view(c *ui.Context) {
 		ui.Split(c, &a.sidebar, func() { a.sidebarPane(c, p) }, func() { a.mainPane(c, p) }).Fill()
 		a.envDialog(c, p)
 		a.confirmDialog(c, p)
+		a.runSettingsDialog(c, p)
 	})
 }
 
@@ -119,6 +121,7 @@ func main() {
 			log.Printf("store: %v", err)
 		}
 		a.refresh()
+		a.loadRunSettings()
 		a.startMockGateway()
 
 		a.win = mygo.NewWindow(mygo.WindowOptions{

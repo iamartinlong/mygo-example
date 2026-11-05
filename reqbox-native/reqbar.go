@@ -102,14 +102,49 @@ func (a *app) mainPane(c *ui.Context, p palette) {
 	})
 }
 
+// emptyState is the web's workspace-empty splash: eyebrow, headline,
+// description, a New-request button, then the three feature columns
+// above a hairline.
 func (a *app) emptyState(c *ui.Context, p palette) {
-	ui.Column(c).Fill().AlignItems(ui.Center).Children(func() {
-		ui.Row(c).Grow(1)
-		ui.Text(c, "NO REQUEST").FontSize(11).LetterSpacing(1).
-			SingleLine().TextColor(p.mutedFg.color())
-		ui.Text(c, "Pick a request on the left, or make one with +").
-			FontSize(12.5).SingleLine().TextColor(p.mutedFg.color())
-		ui.Row(c).Grow(1)
+	ui.Column(c).Fill().AlignItems(ui.Center).Center().Padding(0, 24, 0, 24).
+		Children(func() {
+		ui.Column(c).Width(448).Gap(12).Children(func() {
+			ui.Text(c, strings.ToUpper(tr("empty.eyebrow"))).
+				FontSize(11).LetterSpacing(1.5).Font("JetBrains Mono").
+				TextColor(p.mutedFg.color())
+			ui.Text(c, tr("empty.title")).FontSize(21).Bold().LineHeight(1.25)
+			ui.Text(c, tr("empty.desc")).FontSize(13).
+				TextColor(p.mutedFg.color())
+			ui.Row(c).Height(34).Gap(10).AlignItems(ui.Center).Children(func() {
+				e := ui.Row(c).Height(28).Padding(0, 14, 0, 14).Gap(7).
+					AlignItems(ui.Center).Background(p.foreground.color()).
+					Children(func() {
+						ui.Icon(c, iconFileText).Size(13, 13).
+							TextColor(p.primaryFg.color())
+						ui.Text(c, tr("empty.newRequest")).FontSize(12).
+							SingleLine().TextColor(p.primaryFg.color())
+					})
+				if e.Clicked() {
+					a.pending.newRequest = true
+				}
+				ui.Text(c, tr("empty.orPress")).FontSize(10.5).
+					Font("JetBrains Mono").TextColor(p.mutedFg.color())
+			})
+			ui.Row(c).Fill().Height(1).Background(p.hairline.color())
+			ui.Row(c).Gap(16).Children(func() {
+				a.featureCol(c, p, tr("empty.featRequests"), tr("empty.featRequestsSub"))
+				a.featureCol(c, p, tr("empty.featHistory"), tr("empty.featHistorySub"))
+				a.featureCol(c, p, tr("empty.featMocks"), tr("empty.featMocksSub"))
+			})
+		})
+	})
+}
+
+func (a *app) featureCol(c *ui.Context, p palette, title, sub string) {
+	ui.Column(c).Grow(1).Gap(2).Children(func() {
+		ui.Text(c, title).FontSize(12).Bold().SingleLine()
+		ui.Text(c, sub).FontSize(10.5).SingleLine().
+			TextColor(p.mutedFg.color())
 	})
 }
 
