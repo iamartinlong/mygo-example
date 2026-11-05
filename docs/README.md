@@ -25,6 +25,7 @@
 - [CJK 渲染验收](04-verification/cjk-input.md) — 中文/日文/Emoji/混排渲染与输入控件实测（experiments/cjk-input）
 - [万条列表性能验收](04-verification/perf-list.md) — 10k 数据虚拟化/帧数/内存实测 + view panic 行为观察（experiments/perf-list）
 - [宣称功能验收](04-verification/native-claims.md) — 剪贴板/菜单/托盘最小验证（experiments/native-claims）
+- [更新链路 E2E 验收](04-verification/update-e2e.md) — 签名构建→GitHub 发布→应用内 13KB 增量升级全链实测
 
 ## 本仓库布局
 
