@@ -50,6 +50,7 @@ func (a *app) send() {
 			if err != nil {
 				a.run.resp = nil
 				a.run.errText = errText
+				a.toastErr(errText)
 			} else {
 				a.run.errText = ""
 				a.run.resp = &resp

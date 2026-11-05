@@ -19,6 +19,11 @@ func (a *app) publishPane(c *ui.Context, p palette) {
 			TextColor(p.mutedFg.color())
 		if ui.Checkbox(c, &a.edit.exposed, "Publish as a mock endpoint").Changed() {
 			a.edit.dirty = true
+			if a.edit.exposed {
+				a.toastOK("Mock published")
+			} else {
+				a.toastOK("Mock unpublished")
+			}
 		}
 		ui.Text(c, "Requests are executed live, not replayed from cache.").
 			FontSize(11.5).SingleLine().TextColor(p.mutedFg.color())

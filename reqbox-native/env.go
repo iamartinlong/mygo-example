@@ -150,6 +150,7 @@ func (a *app) envListPane(c *ui.Context, p palette) {
 			if env, err := a.st.CreateEnvironment("New environment", nil); err == nil {
 				a.loadEnvs()
 				a.openEnvEdit(env.ID)
+				a.toastOK("Environment created")
 			}
 		}
 	})
@@ -245,6 +246,7 @@ func (a *app) saveEnvEdit() {
 	if _, err := a.st.UpdateEnvironment(a.envEditID, a.envEditName, vars); err == nil {
 		a.loadEnvs()
 		a.envEditID = ""
+		a.toastOK("Environment saved")
 	}
 }
 
@@ -255,6 +257,7 @@ func (a *app) deleteEnv(id string) {
 	}
 	a.envEditID = ""
 	a.loadEnvs()
+	a.toastOK("Environment deleted")
 }
 
 // btnSecondary is a small neutral button, as the web's ghost buttons.

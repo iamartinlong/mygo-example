@@ -148,6 +148,10 @@ func (a *app) saveEdit() {
 	if err != nil {
 		return
 	}
+	if strings.TrimSpace(a.edit.url) == "" {
+		a.toastErr("Add a URL before saving")
+		return
+	}
 	r.Name, r.Method, r.URL = a.edit.name, a.edit.method, a.edit.url
 	r.Params, r.Headers = a.edit.params, a.edit.headers
 	r.BodyType, r.Body, r.Form = a.edit.bodyType, a.bodyBuf.String(), a.edit.form
@@ -157,6 +161,9 @@ func (a *app) saveEdit() {
 		a.bodyBuf.MarkSaved()
 		a.edit.dirty = false
 		a.refresh()
+		a.toastOK("Request saved")
+	} else {
+		a.toastErr("Could not save")
 	}
 }
 

@@ -94,21 +94,28 @@ func (a *app) applyPending() {
 	switch {
 	case p.newRequest:
 		a.st.CreateRequest(store.Request{Name: "New request", Method: "GET"})
+		a.toastOK("Request created")
 	case p.newCollection:
 		a.st.CreateCollection("New collection")
+		a.toastOK("Collection created")
 	case p.deleteReq != "":
 		a.st.DeleteRequest(p.deleteReq)
 		if a.selectedID == p.deleteReq {
 			a.selectedID = ""
 		}
+		a.toastOK("Request deleted")
 	case p.deleteCol != "":
 		a.st.DeleteCollection(p.deleteCol)
+		a.toastOK("Collection deleted")
 	case p.deleteHist != "":
 		a.st.DeleteHistory(p.deleteHist)
 	case p.clearHist:
 		a.st.ClearHistory()
+		a.toastOK("History cleared")
 	case p.duplicate != "":
-		a.st.DuplicateRequest(p.duplicate)
+		if dup, err := a.st.DuplicateRequest(p.duplicate); err == nil {
+			a.toastOK(`Duplicated as "` + dup.Name + `"`)
+		}
 	case p.rename != "":
 		if r, err := a.st.GetRequest(p.rename); err == nil {
 			r.Name = p.renameTo

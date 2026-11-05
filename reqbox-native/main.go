@@ -48,6 +48,7 @@ type app struct {
 	envEditName string
 	envEditVars []envVarEdit
 	confirm     confirmState
+	toasts      []toastMsg
 
 	win      *mygo.Window
 	exec     *runner.Executor
@@ -59,6 +60,19 @@ func (a *app) view(c *ui.Context) {
 	p := a.pal()
 	c.SetTheme(theme(p, c.Theme()))
 
+	// Window shortcuts, as on the web: Ctrl+Enter send, Ctrl+S save,
+	// Ctrl+N new request. c.Shortcut is inert while a modal is open.
+	if c.Shortcut(ui.Ctrl, ui.KeyEnter) {
+		a.send()
+	}
+	if c.Shortcut(ui.Ctrl, ui.KeyS) {
+		a.saveEdit()
+	}
+	if c.Shortcut(ui.Ctrl, ui.KeyN) {
+		a.pending.newRequest = true
+	}
+
+	a.drainToasts(c, p)
 	ui.Column(c).Fill().Children(func() {
 		a.topBar(c, p)
 		ui.Split(c, &a.sidebar, func() { a.sidebarPane(c, p) }, func() { a.mainPane(c, p) }).Fill()
