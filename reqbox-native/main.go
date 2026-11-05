@@ -47,6 +47,7 @@ type app struct {
 	envEditID   string
 	envEditName string
 	envEditVars []envVarEdit
+	confirm     confirmState
 
 	win      *mygo.Window
 	exec     *runner.Executor
@@ -62,6 +63,7 @@ func (a *app) view(c *ui.Context) {
 		a.topBar(c, p)
 		ui.Split(c, &a.sidebar, func() { a.sidebarPane(c, p) }, func() { a.mainPane(c, p) }).Fill()
 		a.envDialog(c, p)
+		a.confirmDialog(c, p)
 	})
 }
 

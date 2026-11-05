@@ -178,7 +178,9 @@ func (a *app) historyPane(c *ui.Context, p palette) {
 		e := ui.Text(c, "Clear all").FontSize(11.5).SingleLine().
 			TextColor(p.bad.color())
 		if e.Clicked() {
-			a.pending.clearHist = true
+			a.askConfirm("Clear all history?",
+				"Every recorded run is removed. This cannot be undone.",
+				"Clear history", func() { a.pending.clearHist = true })
 			a.applyPending()
 		}
 	})
@@ -283,7 +285,9 @@ func (a *app) sideRowView(c *ui.Context, p palette, i int) {
 				SingleLine().TextColor(p.mutedFg.color())
 		}).ContextMenu(func(m *ui.Menu) {
 			if row.colID != "" && m.Item("Delete").Chosen() {
-				a.pending.deleteCol = row.colID
+				a.askConfirm(`Delete "`+row.title+`"`,
+					"Requests inside this collection are kept and move to Unsorted.",
+					"Delete collection", func() { a.pending.deleteCol = row.colID })
 			}
 		})
 		return
@@ -316,7 +320,9 @@ func (a *app) sideRowView(c *ui.Context, p palette, i int) {
 		}
 		m.Separator()
 		if m.Item("Delete").Chosen() {
-			a.pending.deleteReq = r.ID
+			a.askConfirm(`Delete "`+r.Name+`"`,
+				"Past runs of this request stay in History.",
+				"Delete request", func() { a.pending.deleteReq = r.ID })
 		}
 	})
 }

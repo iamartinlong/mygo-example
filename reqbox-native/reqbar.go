@@ -246,7 +246,9 @@ func (a *app) curlRow(c *ui.Context, p palette) {
 			ui.Text(c, "Delete").FontSize(11.5).SingleLine().TextColor(p.bad.color())
 		})
 		if e.Clicked() {
-			a.pending.deleteReq = a.edit.id
+			a.askConfirm(`Delete "`+a.edit.name+`"`,
+				"Past runs of this request stay in History.",
+				"Delete request", func() { a.pending.deleteReq = a.edit.id })
 		}
 		ui.Row(c).Grow(1).Children(func() {
 			ui.Text(c, label).FontSize(11).SingleLine().TextColor(p.mutedFg.color())

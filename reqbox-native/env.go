@@ -125,21 +125,23 @@ func (a *app) envListPane(c *ui.Context, p palette) {
 		}
 		for _, env := range a.envs {
 			env := env
-			e := ui.Row(c).Height(38).Padding(0, 12, 0, 12).Gap(10).
-				AlignItems(ui.Center).Background(p.secondary.color()).
-				Radius(5).Children(func() {
-				ui.Text(c, env.Name).FontSize(12.5).Grow(1)
-				ui.Text(c, strconv.Itoa(len(env.Variables))+" vars").
-					FontSize(11).TextColor(p.mutedFg.color())
-				ui.Text(c, "Delete").FontSize(11.5).
+			ui.Row(c).Height(38).Gap(10).AlignItems(ui.Center).Children(func() {
+				e := ui.Row(c).Grow(1).Height(38).Padding(0, 12, 0, 12).Gap(10).
+					AlignItems(ui.Center).Background(p.secondary.color()).
+					Radius(5).Children(func() {
+					ui.Text(c, env.Name).FontSize(12.5).Grow(1)
+					ui.Text(c, strconv.Itoa(len(env.Variables))+" vars").
+						FontSize(11).TextColor(p.mutedFg.color())
+				})
+				if e.Clicked() {
+					a.openEnvEdit(env.ID)
+				}
+				e = ui.Text(c, "Delete").FontSize(11.5).
 					TextColor(p.bad.color())
-			})
-			if e.Clicked() {
-				a.openEnvEdit(env.ID)
-			}
-			e.ContextMenu(func(m *ui.Menu) {
-				if m.Item("Delete environment").Chosen() {
-					a.deleteEnv(env.ID)
+				if e.Clicked() {
+					a.askConfirm(`Delete "`+env.Name+`"`,
+						"Its variables are removed with it.",
+						"Delete environment", func() { a.deleteEnv(env.ID) })
 				}
 			})
 		}
@@ -199,8 +201,13 @@ func (a *app) envEditPane(c *ui.Context, p palette) {
 			e := ui.Text(c, "Delete environment").FontSize(12).
 				TextColor(p.bad.color())
 			if e.Clicked() {
-				a.deleteEnv(a.envEditID)
-				a.envMgr = false
+				id := a.envEditID
+				a.askConfirm(`Delete "`+a.envEditName+`"`,
+					"Its variables are removed with it.",
+					"Delete environment", func() {
+						a.deleteEnv(id)
+						a.envMgr = false
+					})
 			}
 			ui.Row(c).Grow(1)
 			e = btnPrimary(c, p, "Save")
