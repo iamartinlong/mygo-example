@@ -5,6 +5,7 @@ _research/
 *.exe
 todo-app/todo-app
 todo-app/build/
+reqbox-desktop/build/
 
 # 截图含桌面个人信息，仅本地留存
 todo-app/*.png

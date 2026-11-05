@@ -1,0 +1,12 @@
+{
+  "name": "Reqbox Desktop",
+  "identifier": "dev.martinlong.reqbox-desktop",
+  "version": "0.1.0",
+  "copyright": "© 2026 Martin Long",
+  "out": "build",
+  "updates": {
+    "publicKey": "9CLugt3XJXqgWMHZYdP2aMdhXTxmxF764ClUZsztkYU=",
+    "github": "iamartinlong/mygo-example",
+    "tagPrefix": "reqbox-v"
+  }
+}

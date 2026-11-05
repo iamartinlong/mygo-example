@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/plugins/updater"
 
 	"reqbox-desktop/internal/server"
 	"reqbox-desktop/internal/store"
@@ -29,6 +30,10 @@ func main() {
 	if !mygo.App.RequestSingleInstanceLock() {
 		return
 	}
+	// Background update check 10s after launch, then daily; the window offers
+	// install/relaunch. Release-feed config lives in mygo.json (tagPrefix
+	// reqbox-v keeps this app's releases separate from todo-app's).
+	mygo.Use(updater.Plugin)
 	if err := run(); err != nil {
 		slog.Error("reqbox-desktop", "error", err)
 		os.Exit(1)
@@ -38,6 +43,12 @@ func main() {
 func run() error {
 	log := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	slog.SetDefault(log)
+
+	// mygo build stamps the version; go build leaves it empty and the API
+	// would report a bare "dev".
+	if v := mygo.App.Version(); v != "" {
+		server.Version = v
+	}
 
 	dir, err := mygo.App.Path(mygo.PathUserData)
 	if err != nil {

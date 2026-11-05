@@ -88,3 +88,21 @@ mygo.NewWindow(mygo.WindowOptions{URL: "/"})
 **建议分两步走**：先走路线 A 快速得到 100% 还原的桌面版（验证 WebView2、协议挂载、mock 监听、打包更新全链），把 Reqbox 正式跑在 mygo 上；原生化为路线 B 的可选后续，按「哪个界面用得多就原生化哪个」逐面板推进，不做一次性全重写。
 
 若认可，第一步批计划：① `reqbox-desktop/` 最小 mygo 壳（SetFrontend + Protocol.Handle 挂 /api + WebView2 首验 + 截图对比）→ ② 解锁屏绕过 + mock 回环监听 + 数据目录切到 PathUserData（兼容直读现有 db）→ ③ mygo.json 打包 + 菜单/快捷键接入 + 更新链路接入。
+
+## 七、路线 A 执行结果（2026-11-05）
+
+三批全部完成，架构与原计划有一处偏差：Protocol.Handle 换成了 loopback HTTP 服务（mock 网关需要真实 HTTP，且 cookie/web 语义 100% 保留），窗口直接 LoadURL。
+
+| 批 | 内容 | 结果 |
+|---|---|---|
+| ① mygo 壳 | SetFrontend 换 `//go:embed web/dist` + loopback `http.Server` + WebView2 窗口；store/runner/server 三包零改动 import（仅 import 路径改写） | ✅ UI 100% 还原，截图对比通过 |
+| ② 数据 + 桌面化 | 数据目录切 `PathUserData`；mock 端口固定 127.0.0.1:5178（被占回退临时端口并大声告警） | ✅ **双向 db 兼容实测**：桌面版写的库上游 reqbox.exe 可读（token 按库存放，需显式 `-token`），上游库桌面版直开；WAL 注意：拷贝须 db+wal+shm 一起 |
+| ③ 打包 + 更新链路 | mygo.json（v0.1.0）+ 图标（按上游 favicon 等比放大）+ CHANGELOG + 专用更新密钥 + `mygo build` 签名构建 + 静默安装 | ✅ exe 17.8MB、安装器 5.8MB、整包 + manifest；安装版实测 `/api/health` 报 `0.1.0`、UI 完整 |
+
+更新链路接入方式：`mygo.Use(updater.Plugin)` 后台检查 + `updates.tagPrefix: "reqbox-v"`——**同仓库托管两个应用的关键**：reqbox-desktop 的发布走 `reqbox-v*` tag，不占 repo 的 latest，与 todo-app 的 `v*` 发布互不干扰（updates.md §41-48）。首个版本无 delta 属正常。
+
+两点如实记录：
+- 「安装后无更新弹窗」的验证是在 GitHub 匿名 API 限流耗尽（403, 0 remaining）时做的，无法区分「tagPrefix 隔离生效」和「检查失败静默」；隔离的完整 E2E 要等 `reqbox-v0.1.0` 发布后验证（届时 `mygo build -upload` 需要 GH_TOKEN，403 也会消失）。
+- 安装器是 NSIS 系，静默参数 `/S`；Git Bash 会把 `/S` 路径转换成磁盘路径导致静默失败——必须 `MSYS_NO_PATHCONV=1`。
+
+发布属外部动作，等用户开口再执行（draft release + manifest 最后传的次序照 todo-app 流程）。
