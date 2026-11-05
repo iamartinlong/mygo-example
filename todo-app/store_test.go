@@ -89,6 +89,29 @@ func TestStoreRoundTrip(t *testing.T) {
 	}
 }
 
+func TestSetTitle(t *testing.T) {
+	s, _ := openTestStore(t)
+	a, _ := s.Add("old title")
+
+	if err := s.SetTitle(a.ID, "  new title  "); err != nil {
+		t.Fatalf("SetTitle: %v", err)
+	}
+	if got := s.Snapshot()[0].Title; got != "new title" {
+		t.Fatalf("title = %q", got)
+	}
+
+	if err := s.SetTitle(a.ID, "   "); err == nil {
+		t.Fatal("empty title should fail")
+	}
+	if got := s.Snapshot()[0].Title; got != "new title" {
+		t.Fatalf("failed SetTitle changed title to %q", got)
+	}
+
+	if err := s.SetTitle(999, "nope"); err != nil {
+		t.Fatalf("unknown id: %v", err)
+	}
+}
+
 func TestRemoveAndClearDone(t *testing.T) {
 	s, _ := openTestStore(t)
 	a, _ := s.Add("one")

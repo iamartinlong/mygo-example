@@ -19,6 +19,7 @@ type appState struct {
 	draft     string
 	filter    int // 0 all, 1 active, 2 done
 	list      ui.ListState
+	selected  int // chosen row, -1 for none; EditableText in a row reads it
 	updateMsg string
 }
 
@@ -74,10 +75,11 @@ func (a *appState) view(c *ui.Context) {
 				if ui.Checkbox(c, &done, "").Label(it.Title).Changed() {
 					a.store.SetDone(it.ID, done)
 				}
+				title := it.Title
 				if it.Done {
-					ui.Text(c, it.Title).Grow(1).TextColor(t.TextMuted)
-				} else {
-					ui.Text(c, it.Title).Grow(1)
+					ui.Text(c, title).Grow(1).TextColor(t.TextMuted)
+				} else if ui.EditableText(c.Key(fmt.Sprintf("title-%d", it.ID)), &title).Changed() {
+					a.store.SetTitle(it.ID, title)
 				}
 				if ui.Button(c.Key(fmt.Sprintf("del-%d", it.ID)), "✕").Label("Delete").Clicked() {
 					a.store.Remove(it.ID)
@@ -153,7 +155,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	a := &appState{store: store}
+	a := &appState{store: store, selected: -1}
+	a.list.Selected = &a.selected
 	mygo.App.OnSecondInstance(func(args []string, workingDir string) {
 		if mainWin != nil {
 			mainWin.Restore()

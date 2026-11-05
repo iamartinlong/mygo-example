@@ -113,6 +113,24 @@ func (t *Todos) Add(title string) (Todo, error) {
 	return todo, nil
 }
 
+// SetTitle renames a todo. Empty titles are rejected and keep the old one.
+func (t *Todos) SetTitle(id int64, title string) error {
+	title = strings.TrimSpace(title)
+	if title == "" {
+		return errors.New("a todo needs a title")
+	}
+	t.mu.Lock()
+	i := slices.IndexFunc(t.items, func(it Todo) bool { return it.ID == id })
+	if i < 0 {
+		t.mu.Unlock()
+		return nil
+	}
+	t.items[i].Title = title
+	t.mu.Unlock()
+	t.Save()
+	return nil
+}
+
 // SetDone marks a todo done or not done.
 func (t *Todos) SetDone(id int64, done bool) {
 	t.mu.Lock()
