@@ -11,6 +11,7 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
+	"reqbox-desktop/pkg/runner"
 	"reqbox-desktop/pkg/store"
 )
 
@@ -32,6 +33,10 @@ type app struct {
 	showFullURL bool
 	bodyBuf     *editor.Buffer
 	bodyState   *editor.State
+
+	win  *mygo.Window
+	exec *runner.Executor
+	run  runState
 }
 
 func (a *app) view(c *ui.Context) {
@@ -66,8 +71,9 @@ func (a *app) topBar(c *ui.Context, p palette) {
 }
 
 func main() {
-	a := &app{sidebar: 260}
+	a := &app{sidebar: 260, run: runState{timeout: "30", follow: true, verify: true}}
 	mygo.App.WhenReady(func() {
+		a.exec = runner.New()
 		dir, err := mygo.App.Path(mygo.PathUserData)
 		if err == nil {
 			a.st, err = store.Open(filepath.Join(dir, "reqbox.db"))
@@ -77,7 +83,7 @@ func main() {
 		}
 		a.refresh()
 
-		mygo.NewWindow(mygo.WindowOptions{
+		a.win = mygo.NewWindow(mygo.WindowOptions{
 			Title:     "Reqbox",
 			Width:     1280,
 			Height:    820,

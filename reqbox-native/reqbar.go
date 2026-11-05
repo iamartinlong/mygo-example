@@ -65,8 +65,8 @@ func kvID() string {
 	return hex.EncodeToString(b)
 }
 
-// mainPane is the workspace: title row, request bar, tab strip and the
-// Params/Headers editors. Send lands in B5, Body/Auth in B4, Publish in B7.
+// mainPane is the workspace: title row, request bar, tab strip, the
+// Params/Headers/Body/Auth editors, then the run bar and response pane.
 func (a *app) mainPane(c *ui.Context, p palette) {
 	if a.edit.id != a.selectedID {
 		a.loadEdit()
@@ -91,6 +91,8 @@ func (a *app) mainPane(c *ui.Context, p palette) {
 		case "Auth":
 			a.authPane(c, p)
 		}
+		a.runBar(c, p)
+		a.responsePane(c, p)
 	})
 }
 
@@ -175,12 +177,18 @@ func (a *app) requestBar(c *ui.Context, p palette) {
 func (a *app) sendBtn(c *ui.Context, p palette) {
 	e := ui.Row(c).Height(30).Padding(0, 16, 0, 16).Gap(6).
 		AlignItems(ui.Center).Background(p.primary.color()).Children(func() {
-		ui.Icon(c, iconSend).Size(13, 13).TextColor(p.primaryFg.color())
-		ui.Text(c, "SEND").FontSize(11.5).Bold().LetterSpacing(0.5).
-			SingleLine().TextColor(p.primaryFg.color())
+		if a.run.running {
+			ui.Text(c, "…").FontSize(11.5).Bold().
+				SingleLine().TextColor(p.primaryFg.color())
+		} else {
+			ui.Icon(c, iconSend).Size(13, 13).TextColor(p.primaryFg.color())
+			ui.Text(c, "SEND").FontSize(11.5).Bold().LetterSpacing(0.5).
+				SingleLine().TextColor(p.primaryFg.color())
+		}
 	})
-	// wired in B5 (runner); it renders now to match the web chrome
-	_ = e.Clicked()
+	if e.Clicked() {
+		a.send()
+	}
 }
 
 func (a *app) fullURLRow(c *ui.Context, p palette) {

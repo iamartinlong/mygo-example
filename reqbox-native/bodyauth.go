@@ -31,7 +31,7 @@ func (a *app) bodyPane(c *ui.Context, p palette) {
 	case "form":
 		a.kvEditor(c, p, "field", &a.edit.form)
 	case "json", "text":
-		editor.View(c, a.bodyState).Grow(1).FillHeight().
+		editor.View(c, a.bodyState).Height(220).
 			Padding(8, 16, 8, 16)
 		if a.bodyBuf.Modified() {
 			a.edit.dirty = true
