@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -32,23 +33,107 @@ func (a *app) send() {
 		return
 	}
 	req := a.editRequest()
+	name := a.edit.name
 	opts := a.runOpts()
 	a.run.running = true
 	a.run.errText = ""
 	go func() {
 		resp, err := a.exec.Run(context.Background(), req, nil, opts)
+		errText := ""
+		if err != nil {
+			errText = err.Error()
+		}
+		a.recordHistory(req, name, resp, errText)
 		a.win.Update(func() {
 			a.run.running = false
 			if err != nil {
 				a.run.resp = nil
-				a.run.errText = err.Error()
-				return
+				a.run.errText = errText
+			} else {
+				a.run.errText = ""
+				a.run.resp = &resp
+				a.resetRespBuf()
 			}
-			a.run.errText = ""
-			a.run.resp = &resp
-			a.resetRespBuf()
+			a.refresh()
 		})
 	}()
+}
+
+// recordHistory persists the run so the History tab can replay it.
+func (a *app) recordHistory(req store.Request, name string, resp runner.Response, errText string) {
+	if a.st == nil {
+		return
+	}
+	h := store.HistoryEntry{
+		RequestID:       req.ID,
+		Name:            name,
+		Method:          req.Method,
+		URL:             req.URL,
+		Error:           errText,
+		OK:              errText == "" && resp.Status >= 200 && resp.Status < 400,
+		RequestSnapshot: store.Execution{Request: req}.MarshalSnapshot(),
+	}
+	if errText == "" {
+		h.Status = resp.Status
+		h.DurationMs = resp.DurationMs
+		h.SizeBytes = resp.SizeBytes
+		h.ResponseBody = resp.BodyText
+		h.BodyEncoding = resp.Encoding
+		if b, err := json.Marshal(resp.Headers); err == nil {
+			h.ResponseHeaders = string(b)
+		}
+		if resp.Timing != nil {
+			if b, err := json.Marshal(resp.Timing); err == nil {
+				h.Timing = string(b)
+			}
+		}
+	}
+	a.st.InsertHistory(h)
+}
+
+// viewHistoryEntry re-opens a recorded run: selecting the originating
+// request when it still exists and showing its recorded response. Entries
+// whose request was deleted stay viewable in the web version only.
+func (a *app) viewHistoryEntry(i int) {
+	e := a.hist[i]
+	a.histOpenID = e.ID
+	exec, ok := store.ParseSnapshot(e.RequestSnapshot)
+	if !ok || a.st == nil {
+		return
+	}
+	if _, err := a.st.GetRequest(exec.Request.ID); err != nil {
+		return
+	}
+	a.selectedID = exec.Request.ID
+	a.loadEdit()
+	a.run.errText = e.Error
+	a.run.resp = historyResponse(e)
+	a.resetRespBuf()
+}
+
+// historyResponse rebuilds a runner.Response from a history row.
+func historyResponse(e store.HistoryEntry) *runner.Response {
+	r := runner.Response{
+		Status:     e.Status,
+		BodyText:   e.ResponseBody,
+		Encoding:   e.BodyEncoding,
+		DurationMs: e.DurationMs,
+		SizeBytes:  e.SizeBytes,
+		RequestURL: e.URL,
+	}
+	if e.ResponseHeaders != "" {
+		json.Unmarshal([]byte(e.ResponseHeaders), &r.Headers)
+	}
+	if e.Timing != "" {
+		t := runner.Timing{}
+		if json.Unmarshal([]byte(e.Timing), &t) == nil {
+			r.Timing = &t
+		}
+	}
+	if vs := r.Headers["Content-Type"]; len(vs) > 0 {
+		r.ContentType = vs[0]
+	}
+	return &r
 }
 
 // editRequest snapshots the workspace into a request for the runner.

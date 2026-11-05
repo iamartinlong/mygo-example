@@ -3,6 +3,7 @@ package main
 import (
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/egoist/mygo/ui"
 	"reqbox-desktop/pkg/store"
@@ -26,6 +27,8 @@ type pending struct {
 	newCollection bool
 	deleteReq     string
 	deleteCol     string
+	deleteHist    string
+	clearHist     bool
 	duplicate     string
 	rename        string
 	renameTo      string
@@ -81,6 +84,8 @@ func (a *app) refresh() {
 	a.reqs, _ = a.st.ListRequests()
 	a.cols, _ = a.st.ListCollections()
 	a.rebuildRows()
+	a.hist, _ = a.st.ListHistory(a.filter, 100)
+	a.histSel = -1
 }
 
 func (a *app) applyPending() {
@@ -97,6 +102,10 @@ func (a *app) applyPending() {
 		}
 	case p.deleteCol != "":
 		a.st.DeleteCollection(p.deleteCol)
+	case p.deleteHist != "":
+		a.st.DeleteHistory(p.deleteHist)
+	case p.clearHist:
+		a.st.ClearHistory()
 	case p.duplicate != "":
 		a.st.DuplicateRequest(p.duplicate)
 	case p.rename != "":
@@ -112,17 +121,21 @@ func (a *app) applyPending() {
 }
 
 // sidebarPane mirrors the web sidebar: environment row, Requests/History
-// pills, filter row, then the sections of requests. History is B6, the
-// environment picker B8.
+// pills, filter row, then either the request sections or the run history.
+// The environment picker's menu arrives with B8.
 func (a *app) sidebarPane(c *ui.Context, p palette) {
 	ui.Column(c).Fill().Background(p.panel.color()).Children(func() {
 		a.envRow(c, p)
 		ui.Row(c).Padding(8, 12, 8, 12).Gap(8).AlignItems(ui.Center).Children(func() {
-			a.pill(c, p, "Requests", len(a.reqs), true)
-			a.pill(c, p, "History", 0, false)
+			a.pill(c, p, "Requests", len(a.reqs), "requests")
+			a.pill(c, p, "History", len(a.hist), "history")
 		})
 		a.filterRow(c, p)
 		if a.st == nil {
+			return
+		}
+		if a.sideTab == "history" {
+			a.historyPane(c, p)
 			return
 		}
 		a.list.Selected = &a.selRow
@@ -141,6 +154,72 @@ func (a *app) sidebarPane(c *ui.Context, p palette) {
 	})
 }
 
+// historyPane lists recorded runs, newest first; clicking one with its
+// originating request still on file re-opens that run in the workspace.
+func (a *app) historyPane(c *ui.Context, p palette) {
+	if len(a.hist) == 0 {
+		ui.Column(c).Grow(1).Padding(12, 12, 0, 12).Children(func() {
+			ui.Text(c, "Runs show up here, with the exact request that "+
+				"produced them.").FontSize(11.5).TextColor(p.mutedFg.color())
+		})
+		return
+	}
+	a.histList.Selected = &a.histSel
+	e := ui.List(c, &a.histList, len(a.hist),
+		func(i int) { a.histRowView(c, p, i) })
+	e.ItemKey(func(i int) any { return a.hist[i].ID })
+	if e.Changed() && a.histSel >= 0 {
+		a.viewHistoryEntry(a.histSel)
+	}
+	a.applyPending()
+	ui.Row(c).Height(34).Padding(0, 12, 0, 12).AlignItems(ui.Center).
+		Children(func() {
+		e := ui.Text(c, "Clear all").FontSize(11.5).SingleLine().
+			TextColor(p.bad.color())
+		if e.Clicked() {
+			a.pending.clearHist = true
+			a.applyPending()
+		}
+	})
+}
+
+func (a *app) histRowView(c *ui.Context, p palette, i int) {
+	h := a.hist[i]
+	row := ui.Row(c).Fill().Padding(6, 10, 6, 10).Gap(8).
+		AlignItems(ui.Center)
+	if h.ID == a.histOpenID {
+		row = row.Background(p.accent.color())
+	}
+	row.Children(func() {
+		m := p.method(h.Method)
+		ui.Row(c).Height(18).Padding(0, 6, 0, 6).AlignItems(ui.Center).
+			Background(m.color().Alpha(0.1)).Children(func() {
+			ui.Text(c, h.Method).FontSize(9).Font("JetBrains Mono").
+				TextColor(m.color())
+		})
+		ui.Column(c).Grow(1).Gap(1).Children(func() {
+			ui.Text(c, h.Name).FontSize(12.5).SingleLine()
+			ui.Text(c, displayURL(h.URL)).FontSize(11).Font("JetBrains Mono").
+				SingleLine().TextColor(p.mutedFg.color())
+		})
+		ui.Column(c).Gap(1).AlignItems(ui.End).Children(func() {
+			if h.OK {
+				ui.Text(c, strconv.Itoa(h.Status)).FontSize(10.5).
+					Font("JetBrains Mono").SingleLine().TextColor(p.ok.color())
+			} else {
+				ui.Text(c, "failed").FontSize(10.5).SingleLine().
+					TextColor(p.bad.color())
+			}
+			ui.Text(c, timeAgo(h.CreatedAt.Time)).FontSize(10.5).SingleLine().
+				TextColor(p.mutedFg.color())
+		})
+	}).ContextMenu(func(m *ui.Menu) {
+		if m.Item("Delete history entry").Chosen() {
+			a.pending.deleteHist = h.ID
+		}
+	})
+}
+
 // envRow is the environment picker; its menu arrives with B8.
 func (a *app) envRow(c *ui.Context, p palette) {
 	ui.Row(c).Height(36).Padding(0, 12, 0, 12).Gap(8).
@@ -152,16 +231,20 @@ func (a *app) envRow(c *ui.Context, p palette) {
 
 // pill is one of the Requests/History tabs; the web draws the active one
 // as a filled pill and the other as bare text with a count.
-func (a *app) pill(c *ui.Context, p palette, label string, count int, active bool) {
+func (a *app) pill(c *ui.Context, p palette, label string, count int, tab string) {
+	active := a.sideTab == tab
 	row := ui.Row(c).Height(26).Padding(0, 12, 0, 12).Gap(6).
 		AlignItems(ui.Center)
 	if active {
 		row = row.Background(p.card.color())
 	}
-	row.Children(func() {
+	e := row.Children(func() {
 		ui.Text(c, label).FontSize(12)
 		ui.Text(c, strconv.Itoa(count)).FontSize(11).TextColor(p.mutedFg.color())
 	})
+	if e.Clicked() {
+		a.sideTab = tab
+	}
 }
 
 func (a *app) filterRow(c *ui.Context, p palette) {
@@ -170,6 +253,9 @@ func (a *app) filterRow(c *ui.Context, p palette) {
 		ui.SearchField(c, &a.filter).Fill().Height(26).FontSize(12)
 		if a.filterChanged() {
 			a.rebuildRows()
+			if a.sideTab == "history" && a.st != nil {
+				a.hist, _ = a.st.ListHistory(a.filter, 100)
+			}
 		}
 		a.iconBtn(c, p, iconFolderPlus, &a.pending.newCollection)
 		a.iconBtn(c, p, iconPlus, &a.pending.newRequest)
@@ -251,4 +337,23 @@ func displayURL(raw string) string {
 		return "/"
 	}
 	return raw
+}
+
+func timeAgo(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	d := time.Since(t)
+	switch {
+	case d < time.Minute:
+		return "just now"
+	case d < time.Hour:
+		return strconv.Itoa(int(d.Minutes())) + "m ago"
+	case d < 24*time.Hour:
+		return strconv.Itoa(int(d.Hours())) + "h ago"
+	case d < 7*24*time.Hour:
+		return strconv.Itoa(int(d.Hours()/24)) + "d ago"
+	default:
+		return t.Format("2006-01-02")
+	}
 }

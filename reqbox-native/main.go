@@ -34,6 +34,12 @@ type app struct {
 	bodyBuf     *editor.Buffer
 	bodyState   *editor.State
 
+	sideTab    string // "requests" or "history"
+	hist       []store.HistoryEntry
+	histList   ui.ListState
+	histSel    int
+	histOpenID string
+
 	win  *mygo.Window
 	exec *runner.Executor
 	run  runState
@@ -71,7 +77,8 @@ func (a *app) topBar(c *ui.Context, p palette) {
 }
 
 func main() {
-	a := &app{sidebar: 260, run: runState{timeout: "30", follow: true, verify: true}}
+	a := &app{sidebar: 260, sideTab: "requests",
+		run: runState{timeout: "30", follow: true, verify: true}}
 	mygo.App.WhenReady(func() {
 		a.exec = runner.New()
 		dir, err := mygo.App.Path(mygo.PathUserData)
