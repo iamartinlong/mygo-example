@@ -1,7 +1,7 @@
 {
   "name": "Todo Native",
   "identifier": "dev.martinlong.todo-native",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "out": "build",
   "updates": {
     "publicKey": "eto8P3HMMfsJt8KLcHIyrodevonVH6y78H+Lg9jLg/s=",

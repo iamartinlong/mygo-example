@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1
+
+- 崩溃兜底：view panic recover + crash.log 落盘 + 恢复重绘
+- 更新链路实测版本：验证安装基座被改动时的升级（增量失败回退整包路径）
+
 ## 0.3.0
 
 - 行内重命名：Finder 式单击选中、停顿再单击编辑（ui.EditableText）

@@ -72,6 +72,12 @@
 - **原因**：`ui.Checkbox(c, &done, it.Title)` 的 label 已是标题，行内又加了 `ui.Text(it.Title)`
 - **解法**：复选框 label 用 `""` + `.Label(it.Title)`（可访问性仍读得到标题），标题只由 `ui.Text` 显示，便于完成态置灰（`TextColor(t.TextMuted)`）
 
+### PowerShell 双引号里的 `$var?` 插值吃掉问号
+
+- **现象**：`"$up?name=$f"` 拼出的 URL 无效（Invalid URI），实际插值结果是 `$up` 后面的 `?` 被并进了变量名
+- **原因**：PS 5.1 双引号字符串里 `?` 可以作为变量名字符，`$up?` 被当成一个（不存在的）变量
+- **解法**：插值一律用花括号：`"${up}?name=${f}"`；含 `$` 的 PowerShell 命令不要写在 bash 双引号里（会被 bash 先吞一层），存成 .ps1 文件执行
+
 ## 验证方法
 
 ### 截图验证窗口渲染
