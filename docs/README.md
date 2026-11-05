@@ -8,6 +8,7 @@
 - [原生 UI API 速查](01-research/mygo-native-ui-api.md) — todo 应用实际用到的 `package ui` API 与模式
 - [分发信任：签名与自动更新](01-research/mygo-updates-signing.md) — 更新链路、updater 插件、Windows/macOS 证书方案与成本
 - [生产可用差距调研](01-research/mygo-production-gaps.md) — 交叉编译/IME/版本节奏结论 + 待办清单
+- [组件、主题与自定义组件](01-research/mygo-components-themes.md) — 80+ 控件清单、主题体系、headless 基座/Local/Painter 三层自定义路径
 
 ## 02-guides — 使用指南
 
