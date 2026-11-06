@@ -137,7 +137,7 @@ func (a *app) applyPending() {
 // The environment picker's menu arrives with B8.
 func (a *app) sidebarPane(c *ui.Context, p palette) {
 	ui.Column(c).Fill().Background(p.rail.color()).Children(func() {
-		ui.Row(c).Height(48).Padding(12, 12, 8, 12).AlignItems(ui.Center).
+		ui.Row(c).Height(48).Padding(12, 12, 8, 12).Gap(8).AlignItems(ui.Center).
 			Children(func() { a.envRow(c, p) })
 		ui.Row(c).Padding(0, 12, 0, 12).Children(func() {
 			ui.Row(c).Grow(1).Gap(2).Padding(2, 2, 2, 2).Radius(8).
@@ -157,8 +157,10 @@ func (a *app) sidebarPane(c *ui.Context, p palette) {
 			return
 		}
 		a.list.Selected = &a.selRow
+		// Grow(1) is the web's flex-1 min-h-0: it pushes the footer bar down
+		// to the bottom of the rail instead of leaving it under the last row.
 		e := ui.List(c, &a.list, len(a.rows),
-			func(i int) { a.sideRowView(c, p, i) })
+			func(i int) { a.sideRowView(c, p, i) }).Grow(1)
 		e.ItemKey(func(i int) any {
 			if a.rows[i].header {
 				return "h:" + a.rows[i].title
@@ -184,7 +186,7 @@ func (a *app) historyPane(c *ui.Context, p palette) {
 	}
 	a.histList.Selected = &a.histSel
 	e := ui.List(c, &a.histList, len(a.hist),
-		func(i int) { a.histRowView(c, p, i) })
+		func(i int) { a.histRowView(c, p, i) }).Grow(1)
 	e.ItemKey(func(i int) any { return a.hist[i].ID })
 	if e.Changed() && a.histSel >= 0 {
 		a.viewHistoryEntry(a.histSel)

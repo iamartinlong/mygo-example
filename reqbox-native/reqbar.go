@@ -319,7 +319,8 @@ func (a *app) fullURLRow(c *ui.Context, p palette) {
 	}
 }
 
-// curlRow holds the cURL copy and Delete actions plus the collection label.
+// curlRow holds the cURL copy and Delete actions plus, flush right, the
+// collection the request lives in.
 func (a *app) curlRow(c *ui.Context, p palette) {
 	label := tr("sidebar.unsorted")
 	for _, col := range a.cols {
@@ -327,25 +328,40 @@ func (a *app) curlRow(c *ui.Context, p palette) {
 			label = col.Name
 		}
 	}
+	// The web appends " · edited" to the same span while the draft differs
+	// from what is on file.
+	if a.edit.dirty && a.edit.id != "" {
+		label += " · " + tr("bar.edited")
+	}
 	ui.Row(c).Height(31).Padding(0, 16, 6, 16).Gap(4).
 		AlignItems(ui.Center).Children(func() {
-		e := ui.Row(c).Padding(0, 8, 0, 8).Children(func() {
+		e := ui.Row(c).Height(24).Padding(0, 8, 0, 8).Gap(4).
+			AlignItems(ui.Center).Children(func() {
+			ui.Icon(c, iconTerminal).Size(14, 14).TextColor(p.mutedFg.color())
 			ui.Text(c, tr("bar.curl")).FontSize(12).FontWeight(500).
-				SingleLine().TextColor(p.foreground.color())
+				SingleLine().TextColor(p.mutedFg.color())
 		})
 		if e.Clicked() {
 			mygo.Clipboard.WriteText(curlFor(a.edit.method, a.edit.url, a.edit.params))
 		}
-		e = ui.Row(c).Padding(0, 8, 0, 8).Children(func() {
-			ui.Text(c, tr("common.delete")).FontSize(12).FontWeight(500).SingleLine().TextColor(p.bad.color())
+		del := ui.Row(c).Height(24).Padding(0, 8, 0, 8).AlignItems(ui.Center)
+		del.Children(func() {
+			// The web's hover:text-bad; the label is muted until then.
+			ink := p.mutedFg.color()
+			if del.Hovered() {
+				ink = p.bad.color()
+			}
+			ui.Text(c, tr("common.delete")).FontSize(12).FontWeight(500).
+				SingleLine().TextColor(ink)
 		})
-		if e.Clicked() {
+		if del.Clicked() {
 			a.askConfirm(tr("confirm.deleteRequest.title", "name", a.edit.name),
 				tr("confirm.deleteRequest.desc"),
 				tr("confirm.deleteRequest.confirm"), func() { a.pending.deleteReq = a.edit.id })
 		}
-		ui.Row(c).Grow(1).Children(func() {
-			ui.Text(c, label).FontSize(11).SingleLine().TextColor(p.mutedFg.color())
+		ui.Row(c).Grow(1).Justify(ui.End).Children(func() {
+			ui.Text(c, label).FontSize(10).Font("JetBrains Mono").
+				SingleLine().TextColor(p.mutedFg.color().Alpha(0.6))
 		})
 	})
 }

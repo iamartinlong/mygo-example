@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/egoist/mygo/ui"
 	"reqbox-desktop/pkg/store"
 )
@@ -31,6 +33,17 @@ func (a *app) envLabel() string {
 	return tr("sidebar.noEnvironmentPlaceholder")
 }
 
+// enabledVars counts as the web's picker badge does: enabled, key ignored.
+func enabledVars(env store.Environment) int {
+	n := 0
+	for _, v := range env.Variables {
+		if v.Enabled {
+			n++
+		}
+	}
+	return n
+}
+
 func (a *app) setActiveEnv(id string) {
 	a.activeEnv = id
 	if a.st != nil {
@@ -56,7 +69,8 @@ func (a *app) resolveEnvVars() map[string]string {
 }
 
 // envRow is the sidebar environment picker: a select whose popup lists
-// "No environment", every environment, and the manager entry.
+// "No environment", every environment, and the manager entry, plus the
+// web's separate manage button on its right.
 func (a *app) envRow(c *ui.Context, p palette) {
 	sel := ui.SelectBase(c, &a.envChoice)
 	sel.Trigger.Grow(1).Height(28).Padding(0, 6, 0, 6).Gap(8).Radius(6).
@@ -64,6 +78,14 @@ func (a *app) envRow(c *ui.Context, p palette) {
 		ui.Text(c, a.envLabel()).FontSize(12).FontWeight(500).Grow(1)
 		ui.Icon(c, iconChevronDown).TextColor(p.mutedFg.color())
 	})
+	// The web's ghost icon-xs button (24px) that opens the manager directly.
+	mgr := ui.Row(c).Width(24).Height(24).AlignItems(ui.Center).Center().
+		Children(func() {
+			ui.Icon(c, iconSettings2).Size(14, 14).TextColor(p.mutedFg.color())
+		})
+	if mgr.Clicked() {
+		a.envMgr = true
+	}
 	sel.Popup(func(panel ui.Element) {
 		panel.MinWidth(200).Padding(4).Background(p.card.color()).
 			Radius(6).Border(1, p.border.color())
@@ -71,9 +93,15 @@ func (a *app) envRow(c *ui.Context, p palette) {
 		it.Children(func() { ui.Text(c, tr("sidebar.noEnvironmentPlaceholder")).FontSize(12) })
 		for _, e := range a.envs {
 			it = sel.Item(e.ID).Padding(6, 10)
-			it.Children(func(name string) func() {
-				return func() { ui.Text(c, name).FontSize(12) }
-			}(e.Name))
+			it.Children(func(env store.Environment) func() {
+				return func() {
+					ui.Text(c, env.Name).FontSize(12).Grow(1)
+					// The web's ml-auto count of the environment's variables.
+					ui.Text(c, fmt.Sprint(enabledVars(env))).FontSize(10).
+						Font("JetBrains Mono").SingleLine().
+						TextColor(p.mutedFg.color())
+				}
+			}(e))
 		}
 		it = sel.Item(envManageKey).Padding(6, 10)
 		it.Children(func() {

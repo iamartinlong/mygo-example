@@ -8,7 +8,7 @@ import (
 
 // Lucide icons (ISC), the same set the web UI draws.
 //
-//go:embed icons/save.svg icons/plus.svg icons/folder-plus.svg icons/chevron-down.svg icons/x.svg icons/send.svg icons/copy.svg icons/chevron-right.svg icons/upload.svg icons/download.svg icons/settings-2.svg icons/file-text.svg icons/sun.svg icons/moon.svg icons/languages.svg icons/mark.svg
+//go:embed icons/save.svg icons/plus.svg icons/folder-plus.svg icons/chevron-down.svg icons/x.svg icons/send.svg icons/copy.svg icons/chevron-right.svg icons/upload.svg icons/download.svg icons/settings-2.svg icons/file-text.svg icons/sun.svg icons/moon.svg icons/languages.svg icons/mark.svg icons/terminal.svg
 var iconFS embed.FS
 
 var (
@@ -28,6 +28,7 @@ var (
 	iconLanguages   = mustIcon("icons/languages.svg")
 	iconMark        = mustIcon("icons/mark.svg")
 	iconSave        = mustIcon("icons/save.svg")
+	iconTerminal    = mustIcon("icons/terminal.svg")
 )
 
 func mustIcon(path string) *ui.SVG {
