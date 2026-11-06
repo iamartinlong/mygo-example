@@ -136,7 +136,7 @@ func (a *app) applyPending() {
 // pills, filter row, then either the request sections or the run history.
 // The environment picker's menu arrives with B8.
 func (a *app) sidebarPane(c *ui.Context, p palette) {
-	ui.Column(c).Fill().Background(p.panel.color()).Children(func() {
+	ui.Column(c).Fill().Background(p.rail.color()).Children(func() {
 		ui.Row(c).Height(48).Padding(12, 12, 8, 12).AlignItems(ui.Center).
 			Children(func() { a.envRow(c, p) })
 		ui.Row(c).Padding(0, 12, 0, 12).Children(func() {

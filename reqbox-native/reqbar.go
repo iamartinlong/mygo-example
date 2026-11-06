@@ -75,7 +75,7 @@ func (a *app) mainPane(c *ui.Context, p palette) {
 	if a.edit.id != a.selectedID {
 		a.loadEdit()
 	}
-	ui.Column(c).Fill().Background(p.card.color()).Children(func() {
+	ui.Column(c).Fill().Background(p.background.color()).Children(func() {
 		if a.edit.id == "" {
 			a.emptyState(c, p)
 			return

@@ -203,7 +203,9 @@ func (a *app) runBar(c *ui.Context, p palette) {
 // responsePane is everything below the run bar: empty state, wait, failure,
 // or the response itself.
 func (a *app) responsePane(c *ui.Context, p palette) {
-	ui.Column(c).FillHeight().Background(p.background.color()).
+	// The web paints this band as bg-background with bg-panel/40 on top.
+	ui.Column(c).FillHeight().Background(
+		p.panel.color().Alpha(0.4).Over(p.background.color())).
 		Children(func() {
 			switch {
 			case a.run.running:

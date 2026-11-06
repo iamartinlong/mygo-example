@@ -221,7 +221,7 @@ func (a *app) loadTheme() {
 }
 
 func main() {
-	a := &app{sidebar: 260, sideTab: "requests",
+	a := &app{sidebar: 290, sideTab: "requests",
 		run: runState{timeout: "30", follow: true, verify: true}}
 	// Before Run: startLocale computes the shown locale with the languages
 	// set at that point, so ours must be in before it does.
