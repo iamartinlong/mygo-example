@@ -169,7 +169,7 @@ func (a *app) saveBtn(c *ui.Context, p palette) {
 	e := ui.Row(c).Height(28).Padding(0, 10, 0, 10).Gap(4).Radius(6).
 		AlignItems(ui.Center).Background(p.foreground.color()).Children(func() {
 		ui.Icon(c, iconSave).Size(12, 12).TextColor(p.primaryFg.color())
-		ui.Text(c, tr("bar.save")).FontSize(12).FontWeight(500).SingleLine().
+		ui.Text(c, tr("bar.save")).FontSize(12.8).FontWeight(500).SingleLine().
 			TextColor(p.primaryFg.color())
 	})
 	if e.Clicked() {
@@ -208,20 +208,22 @@ func (a *app) requestBar(c *ui.Context, p palette) {
 	ui.Row(c).Height(42).Padding(0, 16, 0, 16).AlignItems(ui.Center).
 		Children(func() {
 			// The web's segmented box: one rounded border around method,
-			// URL, copy and SEND, drawn flush inside it. The method cell
-			// is a lookless select, since Select would paint its own frame.
+			// URL, copy and SEND, drawn flush inside it. The method cell and
+			// the URL field are the lookless variants, which draw no frame.
 			ui.Row(c).Grow(1).Height(34).Radius(8).
-				Border(1, p.border.color()).Background(p.card.color()).
+				Border(1, p.border.color()).Background(p.background.color()).
 				AlignItems(ui.Center).Children(func() {
 				a.methodCell(c, p)
-				if ui.TextInput(c, &a.edit.url).Placeholder(tr("bar.urlPlaceholder")).
+				if ui.TextInputBase(c, &a.edit.url).Placeholder(tr("bar.urlPlaceholder")).
 					Grow(1).Height(32).FontSize(12.5).Font("JetBrains Mono").
+					TextColor(p.foreground.color()).
 					Padding(0, 12, 0, 12).Changed() {
 					a.edit.dirty = true
 				}
-				e := ui.Row(c).Width(28).Height(32).AlignItems(ui.Center).Center().
+				e := ui.Row(c).Width(32).Height(32).AlignItems(ui.Center).Center().
+					BorderWidth(0, 0, 0, 1).BorderColor(p.border.color()).
 					Children(func() {
-						ui.Icon(c, iconCopy).Size(13, 13).TextColor(p.mutedFg.color())
+						ui.Icon(c, iconCopy).Size(14, 14).TextColor(p.mutedFg.color())
 					})
 				if e.Clicked() {
 					mygo.Clipboard.WriteText(curlFor(a.edit.method, a.edit.url, a.edit.params))
@@ -237,20 +239,26 @@ func (a *app) methodCell(c *ui.Context, p palette) {
 	m := p.method(a.edit.method)
 	a.methodPick = a.edit.method
 	sel := ui.SelectBase(c, &a.methodPick)
-	sel.Trigger.Width(112).Height(32).Padding(0, 12, 0, 12).Gap(8).
-		AlignItems(ui.Center).BorderWidth(0, 0, 0, 1).BorderColor(p.border.color()).
+	sel.Trigger.Width(92).Height(32).Padding(0, 10, 0, 10).Gap(4).
+		AlignItems(ui.Center).BorderWidth(0, 1, 0, 0).BorderColor(p.border.color()).
 		Children(func() {
-			ui.Text(c, a.edit.method).FontSize(12).FontWeight(500).
-				Font("JetBrains Mono").SingleLine().TextColor(m.color()).Grow(1)
-			ui.Icon(c, iconChevronDown).Size(13, 13).TextColor(p.mutedFg.color())
+			ui.Text(c, a.edit.method).FontSize(12).FontWeight(700).
+				LetterSpacing(0.3).Font("JetBrains Mono").SingleLine().
+				TextColor(m.color()).Grow(1)
+			ui.Icon(c, iconChevronDown).Size(12, 12).
+				TextColor(m.color().Alpha(0.5))
 		})
 	sel.Popup(func(panel ui.Element) {
-		panel.MinWidth(140).Padding(4).Background(p.card.color()).
+		panel.MinWidth(144).Padding(4).Background(p.card.color()).
 			Radius(6).Border(1, p.border.color())
 		for _, method := range methods {
 			it := sel.Item(method).Padding(6, 10)
 			it.Children(func(name string) func() {
-				return func() { ui.Text(c, name).FontSize(12).Font("JetBrains Mono") }
+				return func() {
+					ui.Text(c, name).FontSize(12).FontWeight(700).
+						LetterSpacing(0.3).Font("JetBrains Mono").
+						SingleLine().TextColor(p.method(name).color())
+				}
 			}(method))
 		}
 	})
@@ -261,15 +269,17 @@ func (a *app) methodCell(c *ui.Context, p palette) {
 }
 
 func (a *app) sendBtn(c *ui.Context, p palette) {
-	e := ui.Row(c).Height(32).Padding(0, 10, 0, 10).Gap(6).
-		AlignItems(ui.Center).Background(p.primary.color()).Children(func() {
+	e := ui.Row(c).Width(104).Height(32).Padding(0, 10, 0, 10).Gap(6).
+		AlignItems(ui.Center).Center().Radius(0).
+		BorderWidth(0, 0, 0, 1).BorderColor(p.border.color()).
+		Background(p.primary.color()).Children(func() {
 		if a.run.running {
-			ui.Text(c, "…").FontSize(11.5).Bold().
-				SingleLine().TextColor(p.primaryFg.color())
+			ui.Text(c, "…").FontSize(12).Font("JetBrains Mono").FontWeight(600).
+				LetterSpacing(0.3).SingleLine().TextColor(p.primaryFg.color())
 		} else {
-			ui.Icon(c, iconSend).Size(13, 13).TextColor(p.primaryFg.color())
+			ui.Icon(c, iconSend).Size(14, 14).TextColor(p.primaryFg.color())
 			ui.Text(c, tr("bar.send")).FontSize(12).FontWeight(600).LetterSpacing(0.3).
-				SingleLine().TextColor(p.primaryFg.color())
+				Font("JetBrains Mono").SingleLine().TextColor(p.primaryFg.color())
 		}
 	})
 	if e.Clicked() {
@@ -341,22 +351,34 @@ var tabKeys = map[string]string{
 }
 
 func (a *app) tabStrip(c *ui.Context, p palette) {
+	// The web's line tabs: no pill background, a hairline under the whole
+	// strip, and a 2px foreground underline on the active tab.
 	ui.Row(c).Height(32).Padding(0, 16, 0, 16).Gap(16).
-		AlignItems(ui.Center).Children(func() {
+		AlignItems(ui.End).BorderWidth(0, 0, 1, 0).
+		BorderColor(p.border.color().Alpha(0.6)).Children(func() {
 		for _, tab := range []string{"Params", "Headers", "Body", "Auth", "Publish"} {
 			t := tab
 			active := a.edit.tab == t
-			row := ui.Row(c).Height(30).AlignItems(ui.Center)
-			if active {
-				row = row.Background(p.card.color())
+			ink := p.foreground.color().Alpha(0.6)
+			if p.isDark {
+				ink = p.mutedFg.color()
 			}
-			e := row.Children(func() {
-				tt := ui.Text(c, tr(tabKeys[t])).FontSize(12).FontWeight(500).SingleLine()
-				if !active {
-					tt.TextColor(p.mutedFg.color())
-				}
+			col := ui.Column(c).Height(32).
+				AlignItems(ui.Start).Children(func() {
+				ui.Row(c).Grow(1).AlignItems(ui.Center).Children(func() {
+					tt := ui.Text(c, tr(tabKeys[t])).FontSize(12).FontWeight(500).
+						SingleLine()
+					if active {
+						tt.TextColor(p.foreground.color())
+					} else {
+						tt.TextColor(ink)
+					}
+				})
 			})
-			if e.Clicked() {
+			if active {
+				col.BorderWidth(0, 0, 2, 0).BorderColor(p.foreground.color())
+			}
+			if col.Clicked() {
 				a.edit.tab = t
 			}
 		}
