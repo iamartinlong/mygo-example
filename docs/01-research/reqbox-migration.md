@@ -130,3 +130,61 @@ mygo.NewWindow(mygo.WindowOptions{URL: "/"})
 | B13 | 明暗主题 + 微排版打磨 | `.dark` 变体、tnum、间距校准 |
 
 每批完成 = 编译 + 真机运行 + 截图与 web 版同面板对照 + 提交。
+
+## 九、交接点（2026-11-07，批19 进行中）
+
+目标：把参数/请求头 KV 编辑器与发布面板按 web 基线重做（批15–18 已把请求框、标签条、Body/Auth 对齐）。
+
+### 推送链
+
+- `origin/main` = `6cf50ab`，本地 `main` = `3d7f716`（批18），本地领先 6 个提交未推送。
+- 交接默认不推送；远端只有 `iamartinlong/mygo-example`，推之前先 `git fetch` 比对。
+
+### 已落地的部分（未提交，属 WIP）
+
+- `reqbox-native/icons/trash.svg`、`reqbox-native/icons/globe.svg`（lucide 原样转写，stroke=currentColor，24 viewBox）+ `icons.go` 注册 `iconTrash`/`iconGlobe`。
+- 证据：`gofmt`（仅 `i18n_table.go` 因历史 CRLF 被标记，非本批引入，别顺手改）、`go vet`、`go build` 全过；启动后进程存活 8 秒无 panic，说明两张 SVG 的 `mustIcon` 解析通过。界面截图未做逐像素对照——这两张图在界面上还没有使用者。
+
+### 已核对的 web 基线事实源
+
+源码：`reqbox-desktop/web/dist/assets/index-CZMKJqVm.js` 的 `tF`（KV 编辑器）、`sF`（发布面板）、`Ym`（输入框基类）、按钮 `variant`/`size` 字典；CSS 变量 `--radius:.5rem`、`.eyebrow{font-mono .6875rem/.14em}`、`.rounded-md{calc(var(--radius) - 2px)}`。
+实测：`127.0.0.1:5178`（PID 1836）用 browser-use MCP 的 `evaluate_script` 取盒模型（`take_screenshot` 需先在应用内打开浏览器面板，否则报 `NATIVE_BROWSER_VIEWPORT_UNAVAILABLE`）。视口 1045×711，面板内容 x=306。
+
+KV 编辑器：
+
+| 元素 | web 值 |
+|---|---|
+| 表头行 | `grid-cols-[1.5rem_minmax(0,1fr)_minmax(0,1.4fr)_2rem]` gap 8，`px-1 pb-1.5`，`border-b border-border/60`，高 22.7 |
+| 表头文字 | `.eyebrow`：mono 11 / 字距 1.54 / 行高 15.71 / mutedFg |
+| 行容器 | `mt-1`（4px） |
+| 行 | 高 32，`rounded`(4) `px-1 py-0.5` gap 8；未启用整行 `opacity-45` |
+| 复选框 | 14×14，`accent-[var(--ring)]` |
+| 键/值输入 | 高 28，radius 8，边框 transparent，`px-1.5 py-1`，mono **14px**（`md:text-sm` 压过 `text-xs`），hover 边框 border/60、聚焦 border；占位符 query=`limit`/`10`，header=`Authorization`/`Bearer …`，form=`field`/`value` |
+| 删除钮 | 24×24 radius 6，trash 14，默认 `opacity-0`，行 hover 才显 |
+| 列表非空 | 行下方 ghost xs 按钮 `mt-1.5 w-fit`：plus 14 + `common.addRow`，文字 mutedFg |
+| 列表为空 | 全宽虚线按钮 h-64 `mt-2` radius 6 `border-border/70`，plus 14 + `kv.addQueryParam`/`kv.addHeader`；此时没有小按钮 |
+| 页脚 | 参数：仅「启用且有键」计数 >0 时 `mono mt-3 text-[10.5px] text-muted-foreground/70` 的 `kv.appendedOnSend`；请求头：恒有同尺寸（非 mono）`kv.headerHint` |
+
+发布面板（`grid max-w-lg gap-3`，宽 512）：
+
+| 元素 | web 值 |
+|---|---|
+| intro | 12 / 行高 19.5 / mutedFg，512 宽下 3 行 = 39 |
+| 开关卡 | h 54.8，radius 6，`px-3 py-2.5`，gap 10，`border-border/70`；复选框 14 带 `mt-0.5`；标题 12.5 medium（行高 17.86），副标 10.5 mutedFg（15） |
+| 路径名 | `flex-col gap-1`：eyebrow 15.7 → `flex gap-1.5` 高 32（输入 432.8×32，border-input，`px-2.5`，mono 14；自动生成钮 73.2×28，outline sm：`px-2.5` radius 6 bg-background，文字 12.8）→ 提示 10.5 mutedFg/80 |
+| Mock URL 条 | 仅 `exposed && slug` 非空时出现：h 40，radius 6，`bg-muted/50`，`px-2.5 py-2`，gap 8；globe 14 用 `text-ok`，URL mono 11 行高 15.7 截断，复制钮 ghost xs 42×24 |
+| 调用方覆盖 | `mt-1` h 77.8，radius 6，`border-border/60` + `bg-muted/30`，`p-2.5`；eyebrow 带 `mb-1.5`，正文 10.5 行高 17.06 |
+
+### 剩余步骤（按序）
+
+1. 重写 `reqbox-native/reqbar.go` 的 `kvEditor`：表头/行/空态/小按钮/页脚按上表；`what` 需同时驱动占位符对（`limit`/`10` 等）与 `common.addRow`；表单字段（Body→form）走同一函数。
+2. 重写 `reqbox-native/publish.go` 的 `publishPane`：512 宽 12 间距堆叠 + 开关卡 + 路径名行 + Mock URL 条 + 覆盖说明卡。
+3. `gofmt`/`vet`/`build` → 真机跑 → 截图对照参数、请求头、发布、Body=form 四个面板（明暗各一遍）→ 读全量 diff → 提交（不推送）→ 按名删临时件。
+
+### 最大未验证假设
+
+- mygo 无 CSS grid：列宽靠 `Grow(1)`/`Grow(1.4)` + `Basis(0)` + `MinWidth(0)` 复现 264.6:370.4 ≈ 1:1.4，小数 grow 未实测。
+- 行的 group-hover 删除钮：`Hovered()` 读实时 hover 链（`_research/mygo/ui/input.go:1350`），父行可用；但 `Opacity(0)` 的元素是否仍接点击未验证，web 还有 `focus-visible:opacity-100` 这条兜底路径。
+- 14px 复选框要自己画：主题内置 `Checkbox` 的盒子是 `Space(4)`=16px，得换 `CheckboxBase` + `Painter.Fill/StrokePath`（`ui.Path`/`Painter` 已导出）。
+- web 面板带 `max-h-[46vh] overflow-y-auto`，原生侧目前无滚动容器，行数多时的裁剪行为未验证。
+- Mock URL：web 显示 `window.location.origin`（即 5178），原生显示 `a.mockAddr`（网关实际端口，5178 被占时是随机端口）——这是有意的差异，原生显示真正可达的地址，对照时别当缺陷改。
