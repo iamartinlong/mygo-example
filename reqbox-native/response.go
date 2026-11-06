@@ -195,8 +195,10 @@ func (a *app) runBar(c *ui.Context, p palette) {
 		ui.Checkbox(c, &a.run.follow, tr("run.followRedirects"))
 		ui.Checkbox(c, &a.run.verify, tr("run.verifyTls"))
 		ui.Row(c).Grow(1)
-		ui.Text(c, a.edit.method+" · "+a.edit.authType).FontSize(10).
-			Font("JetBrains Mono").SingleLine().TextColor(p.mutedFg.color())
+		// The web's text-muted-foreground/60 on the summary.
+		ui.Text(c, a.edit.method+" · "+a.edit.bodyType).FontSize(10).
+			Font("JetBrains Mono").SingleLine().
+			TextColor(p.mutedFg.color().Alpha(0.6))
 	})
 }
 

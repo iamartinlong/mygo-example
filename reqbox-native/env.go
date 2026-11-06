@@ -7,8 +7,6 @@ import (
 	"reqbox-desktop/pkg/store"
 )
 
-const envManageKey = "\x00manage"
-
 // envVarEdit is one variable row in the environment editor.
 type envVarEdit struct {
 	key, value string
@@ -69,8 +67,8 @@ func (a *app) resolveEnvVars() map[string]string {
 }
 
 // envRow is the sidebar environment picker: a select whose popup lists
-// "No environment", every environment, and the manager entry, plus the
-// web's separate manage button on its right.
+// "No environment" and every environment, plus the web's separate manage
+// button on its right.
 func (a *app) envRow(c *ui.Context, p palette) {
 	sel := ui.SelectBase(c, &a.envChoice)
 	sel.Trigger.Grow(1).Height(28).Padding(0, 6, 0, 6).Gap(8).Radius(6).
@@ -103,21 +101,9 @@ func (a *app) envRow(c *ui.Context, p palette) {
 				}
 			}(e))
 		}
-		it = sel.Item(envManageKey).Padding(6, 10)
-		it.Children(func() {
-			ui.Text(c, tr("sidebar.manageEnv")).FontSize(12).
-				TextColor(p.accent.color())
-		})
 	})
 	if a.envChoice != a.activeEnv && a.envChoice != "" {
-		if a.envChoice == envManageKey {
-			a.envMgr = true
-		} else {
-			a.setActiveEnv(a.envChoice)
-		}
-	}
-	if a.envChoice == envManageKey {
-		a.envChoice = a.activeEnv
+		a.setActiveEnv(a.envChoice)
 	}
 }
 

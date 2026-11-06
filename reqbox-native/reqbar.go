@@ -85,18 +85,22 @@ func (a *app) mainPane(c *ui.Context, p palette) {
 		a.fullURLRow(c, p)
 		a.curlRow(c, p)
 		a.tabStrip(c, p)
-		switch a.edit.tab {
-		case "Params":
-			a.kvEditor(c, p, "parameter", &a.edit.params)
-		case "Headers":
-			a.kvEditor(c, p, "header", &a.edit.headers)
-		case "Body":
-			a.bodyPane(c, p)
-		case "Auth":
-			a.authPane(c, p)
-		case "Publish":
-			a.publishPane(c, p)
-		}
+		// The web's tab group: an 8px gap to a panel padded 12px top and
+		// bottom, so 20px of lead before the content and 20px after it.
+		ui.Column(c).Padding(20, 0, 20, 0).Children(func() {
+			switch a.edit.tab {
+			case "Params":
+				a.kvEditor(c, p, "parameter", &a.edit.params)
+			case "Headers":
+				a.kvEditor(c, p, "header", &a.edit.headers)
+			case "Body":
+				a.bodyPane(c, p)
+			case "Auth":
+				a.authPane(c, p)
+			case "Publish":
+				a.publishPane(c, p)
+			}
+		})
 		a.runBar(c, p)
 		a.responsePane(c, p)
 	})
@@ -378,6 +382,13 @@ func (a *app) tabStrip(c *ui.Context, p palette) {
 		"Params":  enabledKV(a.edit.params),
 		"Headers": enabledKV(a.edit.headers),
 	}
+	// The web dots a tab when its panel differs from the default: a body
+	// type, any credentials, an exposed request.
+	dots := map[string]lch{
+		"Body":    p.method("PUT"),
+		"Auth":    p.method("POST"),
+		"Publish": p.ok,
+	}
 	ui.Row(c).Height(32).Padding(0, 16, 0, 16).Gap(16).
 		AlignItems(ui.End).BorderWidth(0, 0, 1, 0).
 		BorderColor(p.border.color().Alpha(0.6)).Children(func() {
@@ -401,6 +412,10 @@ func (a *app) tabStrip(c *ui.Context, p palette) {
 					if n := counts[t]; n > 0 {
 						tabBadge(c, p, n)
 					}
+					if dot, ok := dots[t]; ok && a.tabDotted(t) {
+						ui.Row(c).Width(6).Height(6).Radius(3).
+							Background(dot.color())
+					}
 				})
 			})
 			if active {
@@ -411,6 +426,19 @@ func (a *app) tabStrip(c *ui.Context, p palette) {
 			}
 		}
 	})
+}
+
+// tabDotted says whether the web marks a tab's status dot.
+func (a *app) tabDotted(tab string) bool {
+	switch tab {
+	case "Body":
+		return a.edit.bodyType != "none"
+	case "Auth":
+		return a.edit.authType != "none"
+	case "Publish":
+		return a.edit.exposed
+	}
+	return false
 }
 
 // enabledKV counts the rows the web badges a tab for: enabled, with a key.

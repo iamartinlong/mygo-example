@@ -13,7 +13,7 @@ import (
 // mock URL to copy. The loopback gateway lives in this app (mock.go) and
 // prefers 127.0.0.1:5178, falling back to an ephemeral port.
 func (a *app) publishPane(c *ui.Context, p palette) {
-	ui.Column(c).Padding(8, 16, 8, 16).Gap(10).Children(func() {
+	ui.Column(c).Padding(0, 16, 0, 16).Gap(10).Children(func() {
 		ui.Text(c, tr("publish.intro")).FontSize(12).
 			TextColor(p.mutedFg.color())
 		if ui.Checkbox(c, &a.edit.exposed, tr("publish.enable")).Changed() {
