@@ -3,6 +3,8 @@ _research/
 
 # 构建产物
 *.exe
+# mygo 在目标被运行时占用后留下的旧二进制备份
+*.exe~
 todo-app/todo-app
 todo-app/build/
 reqbox-desktop/build/

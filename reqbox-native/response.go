@@ -227,7 +227,7 @@ func (a *app) respCenter(c *ui.Context, p palette, eyebrow, msg, keys string) {
 	ui.Column(c).Grow(1).FillHeight().AlignItems(ui.Center).Gap(8).
 		Children(func() {
 			ui.Row(c).Grow(1)
-			ui.Text(c, eyebrow).FontSize(11).LetterSpacing(2).
+			ui.Text(c, eyebrow).FontSize(11).LetterSpacing(2.2).
 				Font("JetBrains Mono").SingleLine().
 				TextColor(p.mutedFg.color().Alpha(0.5))
 			ui.Text(c, msg).FontSize(12).SingleLine().TextColor(p.mutedFg.color())

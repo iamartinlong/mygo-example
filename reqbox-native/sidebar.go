@@ -306,8 +306,8 @@ func (a *app) sideRowView(c *ui.Context, p palette, i int) {
 	row := a.rows[i]
 	if row.header {
 		ui.Row(c).Fill().Padding(12, 12, 6, 12).Children(func() {
-			ui.Text(c, row.title).FontSize(10).LetterSpacing(0.8).
-				SingleLine().TextColor(p.mutedFg.color())
+			ui.Text(c, row.title).FontSize(11).LetterSpacing(1.5).
+				Font("JetBrains Mono").SingleLine().TextColor(p.mutedFg.color())
 		}).ContextMenu(func(m *ui.Menu) {
 			if row.colID != "" && m.Item(tr("common.delete")).Chosen() {
 				a.askConfirm(tr("confirm.deleteCollection.title", "name", row.title),
@@ -319,7 +319,7 @@ func (a *app) sideRowView(c *ui.Context, p palette, i int) {
 		return
 	}
 	r := row.req
-	reqRow := ui.Row(c).Fill().Padding(6, 10, 6, 10).Gap(8).
+	reqRow := ui.Row(c).Fill().Padding(6, 4, 6, 8).Gap(8).
 		AlignItems(ui.Center)
 	if r.ID == a.selectedID {
 		reqRow = reqRow.Background(p.accent.color())
@@ -332,15 +332,14 @@ func (a *app) sideRowView(c *ui.Context, p palette, i int) {
 				TextColor(m.color())
 		})
 		ui.Column(c).Grow(1).Gap(1).Children(func() {
-			// The web keeps the name text-foreground on the accent row.
 			t := ui.EditableText(c, &a.rows[i].edit).FontSize(12.5).
-				TextColor(p.foreground.color()).SingleLine()
+				TextColor(p.foreground.color().Alpha(0.9)).SingleLine()
 			if t.Changed() {
 				a.pending.rename = r.ID
 				a.pending.renameTo = a.rows[i].edit
 			}
-			ui.Text(c, displayURL(r.URL)).FontSize(11).Font("JetBrains Mono").
-				SingleLine().TextColor(p.mutedFg.color())
+			ui.Text(c, displayURL(r.URL)).FontSize(10.5).Font("JetBrains Mono").
+				SingleLine().TextColor(p.mutedFg.color().Alpha(0.8))
 		})
 	}).ContextMenu(func(m *ui.Menu) {
 		if m.Item(tr("sidebar.duplicate")).Chosen() {

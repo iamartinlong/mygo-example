@@ -116,7 +116,7 @@ func (a *app) emptyState(c *ui.Context, p palette) {
 				ui.Text(c, tr("empty.desc")).FontSize(13).
 					TextColor(p.mutedFg.color())
 				ui.Row(c).Height(34).Gap(10).AlignItems(ui.Center).Children(func() {
-					e := ui.Row(c).Height(28).Padding(0, 14, 0, 14).Gap(7).
+					e := ui.Row(c).Height(28).Padding(0, 14, 0, 14).Gap(7).Radius(6).
 						AlignItems(ui.Center).Background(p.foreground.color()).
 						Children(func() {
 							ui.Icon(c, iconFileText).Size(13, 13).
@@ -159,16 +159,18 @@ func (a *app) titleRow(c *ui.Context, p palette) {
 			SingleLine().Changed() {
 			a.edit.dirty = true
 		}
-		ui.Text(c, status).FontSize(11.5).SingleLine().
+		ui.Text(c, status).FontSize(11).Font("JetBrains Mono").SingleLine().
 			TextColor(p.mutedFg.color()).Grow(1)
 		a.saveBtn(c, p)
 	})
 }
 
 func (a *app) saveBtn(c *ui.Context, p palette) {
-	e := ui.Row(c).Height(28).Padding(0, 14, 0, 14).Gap(6).
+	e := ui.Row(c).Height(28).Padding(0, 10, 0, 10).Gap(4).Radius(6).
 		AlignItems(ui.Center).Background(p.foreground.color()).Children(func() {
-		ui.Text(c, tr("bar.save")).FontSize(12).SingleLine().TextColor(p.primaryFg.color())
+		ui.Icon(c, iconSave).Size(12, 12).TextColor(p.primaryFg.color())
+		ui.Text(c, tr("bar.save")).FontSize(12).FontWeight(500).SingleLine().
+			TextColor(p.primaryFg.color())
 	})
 	if e.Clicked() {
 		a.saveEdit()
@@ -203,35 +205,70 @@ func (a *app) saveEdit() {
 }
 
 func (a *app) requestBar(c *ui.Context, p palette) {
-	ui.Row(c).Height(42).Padding(0, 16, 0, 16).Gap(8).
-		AlignItems(ui.Center).Children(func() {
-		if ui.Select(c, &a.edit.method, methods).Width(112).Height(34).Changed() {
-			a.edit.dirty = true
-		}
-		if ui.TextInput(c, &a.edit.url).Placeholder(tr("bar.urlPlaceholder")).
-			Grow(1).Height(34).FontSize(12.5).Changed() {
-			a.edit.dirty = true
-		}
-		e := ui.Row(c).Width(28).Height(34).AlignItems(ui.Center).Center().
-			Children(func() {
-				ui.Icon(c, iconCopy).Size(13, 13).TextColor(p.mutedFg.color())
+	ui.Row(c).Height(42).Padding(0, 16, 0, 16).AlignItems(ui.Center).
+		Children(func() {
+			// The web's segmented box: one rounded border around method,
+			// URL, copy and SEND, drawn flush inside it. The method cell
+			// is a lookless select, since Select would paint its own frame.
+			ui.Row(c).Grow(1).Height(34).Radius(8).
+				Border(1, p.border.color()).Background(p.card.color()).
+				AlignItems(ui.Center).Children(func() {
+				a.methodCell(c, p)
+				if ui.TextInput(c, &a.edit.url).Placeholder(tr("bar.urlPlaceholder")).
+					Grow(1).Height(32).FontSize(12.5).Font("JetBrains Mono").
+					Padding(0, 12, 0, 12).Changed() {
+					a.edit.dirty = true
+				}
+				e := ui.Row(c).Width(28).Height(32).AlignItems(ui.Center).Center().
+					Children(func() {
+						ui.Icon(c, iconCopy).Size(13, 13).TextColor(p.mutedFg.color())
+					})
+				if e.Clicked() {
+					mygo.Clipboard.WriteText(curlFor(a.edit.method, a.edit.url, a.edit.params))
+				}
+				a.sendBtn(c, p)
 			})
-		if e.Clicked() {
-			mygo.Clipboard.WriteText(curlFor(a.edit.method, a.edit.url, a.edit.params))
+		})
+}
+
+// methodCell is the segmented box's left cell: the method and a chevron,
+// over a divider, opening the method list in a borderless select.
+func (a *app) methodCell(c *ui.Context, p palette) {
+	m := p.method(a.edit.method)
+	a.methodPick = a.edit.method
+	sel := ui.SelectBase(c, &a.methodPick)
+	sel.Trigger.Width(112).Height(32).Padding(0, 12, 0, 12).Gap(8).
+		AlignItems(ui.Center).BorderWidth(0, 0, 0, 1).BorderColor(p.border.color()).
+		Children(func() {
+			ui.Text(c, a.edit.method).FontSize(12).FontWeight(500).
+				Font("JetBrains Mono").SingleLine().TextColor(m.color()).Grow(1)
+			ui.Icon(c, iconChevronDown).Size(13, 13).TextColor(p.mutedFg.color())
+		})
+	sel.Popup(func(panel ui.Element) {
+		panel.MinWidth(140).Padding(4).Background(p.card.color()).
+			Radius(6).Border(1, p.border.color())
+		for _, method := range methods {
+			it := sel.Item(method).Padding(6, 10)
+			it.Children(func(name string) func() {
+				return func() { ui.Text(c, name).FontSize(12).Font("JetBrains Mono") }
+			}(method))
 		}
-		a.sendBtn(c, p)
 	})
+	if a.methodPick != "" && a.methodPick != a.edit.method {
+		a.edit.method = a.methodPick
+		a.edit.dirty = true
+	}
 }
 
 func (a *app) sendBtn(c *ui.Context, p palette) {
-	e := ui.Row(c).Height(34).Padding(0, 16, 0, 16).Gap(6).
+	e := ui.Row(c).Height(32).Padding(0, 10, 0, 10).Gap(6).
 		AlignItems(ui.Center).Background(p.primary.color()).Children(func() {
 		if a.run.running {
 			ui.Text(c, "…").FontSize(11.5).Bold().
 				SingleLine().TextColor(p.primaryFg.color())
 		} else {
 			ui.Icon(c, iconSend).Size(13, 13).TextColor(p.primaryFg.color())
-			ui.Text(c, tr("bar.send")).FontSize(11.5).Bold().LetterSpacing(0.5).
+			ui.Text(c, tr("bar.send")).FontSize(12).FontWeight(600).LetterSpacing(0.3).
 				SingleLine().TextColor(p.primaryFg.color())
 		}
 	})
@@ -245,8 +282,8 @@ func (a *app) fullURLRow(c *ui.Context, p palette) {
 		AlignItems(ui.Center).Children(func() {
 		e := ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
 			ui.Icon(c, iconChevronRt).Size(11, 11).TextColor(p.mutedFg.color())
-			ui.Text(c, tr("bar.fullUrl")).FontSize(11).SingleLine().
-				TextColor(p.mutedFg.color())
+			ui.Text(c, tr("bar.fullUrl")).FontSize(10).SingleLine().
+				TextColor(p.mutedFg.color().Alpha(0.7))
 		})
 		if e.Clicked() {
 			a.showFullURL = !a.showFullURL
@@ -278,14 +315,14 @@ func (a *app) curlRow(c *ui.Context, p palette) {
 	ui.Row(c).Height(31).Padding(0, 16, 6, 16).Gap(4).
 		AlignItems(ui.Center).Children(func() {
 		e := ui.Row(c).Padding(0, 8, 0, 8).Children(func() {
-			ui.Text(c, tr("bar.curl")).FontSize(11.5).Font("JetBrains Mono").
+			ui.Text(c, tr("bar.curl")).FontSize(12).FontWeight(500).
 				SingleLine().TextColor(p.foreground.color())
 		})
 		if e.Clicked() {
 			mygo.Clipboard.WriteText(curlFor(a.edit.method, a.edit.url, a.edit.params))
 		}
 		e = ui.Row(c).Padding(0, 8, 0, 8).Children(func() {
-			ui.Text(c, tr("common.delete")).FontSize(11.5).SingleLine().TextColor(p.bad.color())
+			ui.Text(c, tr("common.delete")).FontSize(12).FontWeight(500).SingleLine().TextColor(p.bad.color())
 		})
 		if e.Clicked() {
 			a.askConfirm(tr("confirm.deleteRequest.title", "name", a.edit.name),
@@ -314,7 +351,10 @@ func (a *app) tabStrip(c *ui.Context, p palette) {
 				row = row.Background(p.card.color())
 			}
 			e := row.Children(func() {
-				ui.Text(c, tr(tabKeys[t])).FontSize(12).SingleLine()
+				tt := ui.Text(c, tr(tabKeys[t])).FontSize(12).FontWeight(500).SingleLine()
+				if !active {
+					tt.TextColor(p.mutedFg.color())
+				}
 			})
 			if e.Clicked() {
 				a.edit.tab = t
@@ -334,10 +374,10 @@ func (a *app) kvEditor(c *ui.Context, p palette, what string, kvs *[]store.KV) {
 	ui.Row(c).Height(23).Padding(0, 16, 6, 16).Gap(8).
 		AlignItems(ui.End).Children(func() {
 		ui.Row(c).Width(24)
-		ui.Text(c, strings.ToUpper(tr("kv."+what))).FontSize(10).LetterSpacing(0.8).
-			SingleLine().TextColor(p.mutedFg.color()).Grow(2)
-		ui.Text(c, strings.ToUpper(tr("kv.value"))).FontSize(10).LetterSpacing(0.8).
-			SingleLine().TextColor(p.mutedFg.color()).Grow(3)
+		ui.Text(c, strings.ToUpper(tr("kv."+what))).FontSize(11).LetterSpacing(1.5).
+			Font("JetBrains Mono").SingleLine().TextColor(p.mutedFg.color()).Grow(2)
+		ui.Text(c, strings.ToUpper(tr("kv.value"))).FontSize(11).LetterSpacing(1.5).
+			Font("JetBrains Mono").SingleLine().TextColor(p.mutedFg.color()).Grow(3)
 		ui.Row(c).Width(24)
 	})
 	for i := range *kvs {

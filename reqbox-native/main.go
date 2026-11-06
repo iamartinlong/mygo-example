@@ -31,8 +31,11 @@ type app struct {
 	pending     pending
 	edit        reqEdit
 	showFullURL bool
-	bodyBuf     *editor.Buffer
-	bodyState   *editor.State
+	// methodPick is the segmented box's method select binding; the box
+	// keeps no look, so SelectBase needs the value it shows.
+	methodPick string
+	bodyBuf    *editor.Buffer
+	bodyState  *editor.State
 
 	sideTab    string // "requests" or "history"
 	hist       []store.HistoryEntry
@@ -127,8 +130,8 @@ func (a *app) topBar(c *ui.Context, p palette) {
 // badge is the web's LOCAL chip: mono, wide-tracked, hairline border.
 func badge(c *ui.Context, p palette, label string) {
 	ui.Row(c).Height(16).Padding(0, 4, 0, 4).AlignItems(ui.Center).
-		Border(1, p.border.color()).Radius(3).Children(func() {
-		ui.Text(c, label).FontSize(9.5).LetterSpacing(0.6).
+		Border(1, p.border.color()).Radius(4).Children(func() {
+		ui.Text(c, label).FontSize(9.5).LetterSpacing(1.3).
 			Font("JetBrains Mono").TextColor(p.mutedFg.color())
 	})
 }
@@ -138,7 +141,7 @@ func badge(c *ui.Context, p palette, label string) {
 func (a *app) langMenu(c *ui.Context, p palette) {
 	a.langSel = appLang
 	sel := ui.SelectBase(c, &a.langSel)
-	sel.Trigger.Width(28).Height(28).Center().
+	sel.Trigger.Width(28).Height(28).Radius(6).Center().
 		Children(func() {
 			ui.Icon(c, iconLanguages).Size(14, 14).
 				TextColor(p.mutedFg.color())
@@ -170,7 +173,7 @@ func (a *app) themeBtn(c *ui.Context, p palette) {
 	if a.dark {
 		icon = iconSun
 	}
-	e := ui.Row(c).Width(28).Height(28).Center().Children(func() {
+	e := ui.Row(c).Width(28).Height(28).Radius(6).Center().Children(func() {
 		ui.Icon(c, icon).Size(14, 14).TextColor(p.mutedFg.color())
 	})
 	if e.Clicked() {

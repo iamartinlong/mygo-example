@@ -59,9 +59,9 @@ func (a *app) resolveEnvVars() map[string]string {
 // "No environment", every environment, and the manager entry.
 func (a *app) envRow(c *ui.Context, p palette) {
 	sel := ui.SelectBase(c, &a.envChoice)
-	sel.Trigger.Grow(1).Height(28).Padding(0, 6, 0, 6).Gap(8).
+	sel.Trigger.Grow(1).Height(28).Padding(0, 6, 0, 6).Gap(8).Radius(6).
 		AlignItems(ui.Center).Children(func() {
-		ui.Text(c, a.envLabel()).FontSize(12).Grow(1)
+		ui.Text(c, a.envLabel()).FontSize(12).FontWeight(500).Grow(1)
 		ui.Icon(c, iconChevronDown).TextColor(p.mutedFg.color())
 	})
 	sel.Popup(func(panel ui.Element) {

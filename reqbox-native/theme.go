@@ -114,5 +114,7 @@ func theme(p palette, system *ui.Theme) *ui.Theme {
 	t.Focus = p.ring.color()
 	t.FontSize = 12.5
 	t.Font = "Archivo"
+	// The web's --radius: rounded-lg inputs take 8px, its buttons keep 6.
+	t.Radius = 8
 	return &t
 }
