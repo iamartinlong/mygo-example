@@ -210,9 +210,10 @@ func (a *app) requestBar(c *ui.Context, p palette) {
 			// The web's segmented box: one rounded border around method,
 			// URL, copy and SEND, drawn flush inside it. The method cell and
 			// the URL field are the lookless variants, which draw no frame.
-			ui.Row(c).Grow(1).Height(34).Radius(8).
+			box := ui.Row(c).Grow(1).Height(34).Radius(8).
 				Border(1, p.border.color()).Background(p.background.color()).
-				AlignItems(ui.Center).Children(func() {
+				AlignItems(ui.Center)
+			box.Children(func() {
 				a.methodCell(c, p)
 				if ui.TextInputBase(c, &a.edit.url).Placeholder(tr("bar.urlPlaceholder")).
 					Grow(1).Height(32).FontSize(12.5).Font("JetBrains Mono").
@@ -230,6 +231,10 @@ func (a *app) requestBar(c *ui.Context, p palette) {
 				}
 				a.sendBtn(c, p)
 			})
+			// The web's focus-within:border-ring/60 on the box.
+			if box.FocusWithin() {
+				box.BorderColor(p.ring.color().Alpha(0.6))
+			}
 		})
 }
 
@@ -353,6 +358,10 @@ var tabKeys = map[string]string{
 func (a *app) tabStrip(c *ui.Context, p palette) {
 	// The web's line tabs: no pill background, a hairline under the whole
 	// strip, and a 2px foreground underline on the active tab.
+	counts := map[string]int{
+		"Params":  enabledKV(a.edit.params),
+		"Headers": enabledKV(a.edit.headers),
+	}
 	ui.Row(c).Height(32).Padding(0, 16, 0, 16).Gap(16).
 		AlignItems(ui.End).BorderWidth(0, 0, 1, 0).
 		BorderColor(p.border.color().Alpha(0.6)).Children(func() {
@@ -365,13 +374,16 @@ func (a *app) tabStrip(c *ui.Context, p palette) {
 			}
 			col := ui.Column(c).Height(32).
 				AlignItems(ui.Start).Children(func() {
-				ui.Row(c).Grow(1).AlignItems(ui.Center).Children(func() {
+				ui.Row(c).Grow(1).Gap(4).AlignItems(ui.Center).Children(func() {
 					tt := ui.Text(c, tr(tabKeys[t])).FontSize(12).FontWeight(500).
 						SingleLine()
 					if active {
 						tt.TextColor(p.foreground.color())
 					} else {
 						tt.TextColor(ink)
+					}
+					if n := counts[t]; n > 0 {
+						tabBadge(c, p, n)
 					}
 				})
 			})
@@ -382,6 +394,26 @@ func (a *app) tabStrip(c *ui.Context, p palette) {
 				a.edit.tab = t
 			}
 		}
+	})
+}
+
+// enabledKV counts the rows the web badges a tab for: enabled, with a key.
+func enabledKV(kvs []store.KV) int {
+	n := 0
+	for _, kv := range kvs {
+		if kv.Enabled && kv.Key != "" {
+			n++
+		}
+	}
+	return n
+}
+
+// tabBadge is the web's count chip beside a tab: mono 10px on --muted.
+func tabBadge(c *ui.Context, p palette, n int) {
+	ui.Row(c).Height(15).Padding(0, 4, 0, 4).Radius(4).AlignItems(ui.Center).
+		Background(p.muted.color()).Children(func() {
+		ui.Text(c, fmt.Sprint(n)).FontSize(10).Font("JetBrains Mono").
+			SingleLine().TextColor(p.mutedFg.color())
 	})
 }
 
