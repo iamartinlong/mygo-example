@@ -94,9 +94,12 @@ func (a *app) pal() palette {
 // topBar mirrors the web chrome: Mark + wordmark + LOCAL badge left,
 // health, the language menu and the theme toggle right.
 func (a *app) topBar(c *ui.Context, p palette) {
+	bar := c.TitleBar()
 	ui.Column(c).Children(func() {
-		ui.Row(c).Height(40).Padding(0, 12, 0, 12).Gap(12).
-			AlignItems(ui.Center).Background(p.chrome.color()).
+		// The window controls float over the right of this band; the band
+		// drags the window, its buttons keep their own clicks.
+		ui.Row(c).Height(max(bar.Height, 40)).Padding(0, bar.Right+12, 0, 12).
+			Gap(12).AlignItems(ui.Center).Background(p.chrome.color()).DragWindow().
 			Children(func() {
 				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
 					ui.Icon(c, iconMark).Size(18, 18).
@@ -172,9 +175,23 @@ func (a *app) themeBtn(c *ui.Context, p palette) {
 	})
 	if e.Clicked() {
 		a.dark = !a.dark
+		a.applyButtonsTheme()
 		if a.st != nil {
 			_ = a.st.SetSetting(setTheme, themeName(a.dark))
 		}
+	}
+}
+
+// applyButtonsTheme repaints the floating window controls for the variant
+// they sit on: ThemeDark draws light glyphs. Windows-only; inert elsewhere.
+func (a *app) applyButtonsTheme() {
+	if a.win == nil {
+		return
+	}
+	if a.dark {
+		a.win.SetWindowButtonsTheme(mygo.ThemeDark)
+	} else {
+		a.win.SetWindowButtonsTheme(mygo.ThemeLight)
 	}
 }
 
@@ -232,8 +249,14 @@ func main() {
 			Height:    820,
 			MinWidth:  960,
 			MinHeight: 600,
-			Content:   ui.View(a.view),
+			// One bar instead of two: the system title bar goes, the window
+			// controls float over our chrome band, and unlike Frameless
+			// this keeps the shadow, corners and resize edges.
+			TitleBarStyle:  mygo.TitleBarHidden,
+			TitleBarHeight: 40,
+			Content:        ui.View(a.view),
 		})
+		a.applyButtonsTheme()
 	})
 	if err := mygo.App.Run(); err != nil {
 		log.Fatal(err)
