@@ -137,7 +137,7 @@ mygo.NewWindow(mygo.WindowOptions{URL: "/"})
 
 ### 推送链
 
-- `origin/main` = `6cf50ab`，本地 `main` = `3d7f716`（批18），本地领先 6 个提交未推送。
+- `origin/main` = `6cf50ab`；本地 `main` 领先 8 个提交未推送（批14–18 六次 + 交接文档及其校订），`git status -sb` 可复核。
 - 交接默认不推送；远端只有 `iamartinlong/mygo-example`，推之前先 `git fetch` 比对。
 
 ### 已落地的部分（未提交，属 WIP）
@@ -162,7 +162,7 @@ KV 编辑器：
 | 键/值输入 | 高 28，radius 8，边框 transparent，`px-1.5 py-1`，mono **14px**（`md:text-sm` 压过 `text-xs`），hover 边框 border/60、聚焦 border；占位符 query=`limit`/`10`，header=`Authorization`/`Bearer …`，form=`field`/`value` |
 | 删除钮 | 24×24 radius 6，trash 14，默认 `opacity-0`，行 hover 才显 |
 | 列表非空 | 行下方 ghost xs 按钮 `mt-1.5 w-fit`：plus 14 + `common.addRow`，文字 mutedFg |
-| 列表为空 | 全宽虚线按钮 h-64 `mt-2` radius 6 `border-border/70`，plus 14 + `kv.addQueryParam`/`kv.addHeader`；此时没有小按钮 |
+| 列表为空 | 全宽虚线按钮 `mt-2 h-16`（64px）radius 6 `border-border/70`，plus 14 + `kv.addQueryParam`/`kv.addHeader`；此时没有小按钮 |
 | 页脚 | 参数：仅「启用且有键」计数 >0 时 `mono mt-3 text-[10.5px] text-muted-foreground/70` 的 `kv.appendedOnSend`；请求头：恒有同尺寸（非 mono）`kv.headerHint` |
 
 发布面板（`grid max-w-lg gap-3`，宽 512）：
