@@ -131,7 +131,7 @@ mygo.NewWindow(mygo.WindowOptions{URL: "/"})
 
 每批完成 = 编译 + 真机运行 + 截图与 web 版同面板对照 + 提交。
 
-## 九、交接点（2026-11-07，批19 完成）
+## 九、交接点（2026-11-07，批19–20 完成）
 
 目标：把参数/请求头 KV 编辑器与发布面板按 web 基线重做（批15–18 已把请求框、标签条、Body/Auth 对齐）。**批19 已完成**：`reqbar.go` 的 `kvEditor` 重写为 tF 网格（eyebrow 表头 + border/60 发丝线、24/1fr/1.4fr/32 列 + gap 8、行高 32 radius 4、未启用整行 Opacity(0.45)、14px 复选框、28px mono 14 输入框无框/hover border/60/聚焦 border、hover 显 trash 14 删除钮 24×24、空态虚线 h-16 与非空小按钮 `mt-1.5` 双态、参数页脚 mono 10.5 按计数显隐、请求头页脚恒挂非 mono）；`publish.go` 的 `publishPane` 重写为 sF 堆叠（MaxWidth 512 gap 12：intro 12/1.625、开关卡=整卡 CheckboxBase radius 6 px-3 py-2.5 gap 10、路径名 iF（eyebrow/32px mono 14 输入 + outline sm 自动生成钮，暗色走 input token）、Mock URL 条 h-40 muted/50（globe 14 text-ok + mono 11 + ghost xs 复制钮）、覆盖卡 mt-1 radius 6 border-border/60 bg-muted/30）。明暗 × 参数/请求头/Body=form/发布 八张截图对照通过，截图仅本地 temp 不入库。
 
@@ -178,11 +178,25 @@ KV 编辑器：
 
 ### 剩余步骤（按序）
 
-批19 三步已全部落地（kvEditor 重写、publishPane 重写、vet/build/真机截图对照+提交）。留给下一批的已知差距：
+批19、批20 均已落地（批19：kvEditor/publishPane 重写+对照；批20：tab 面板滚动容器）。留给下一批的已知差距：
 
-- web 面板带 `max-h-[46vh] overflow-y-auto`，原生侧无滚动容器，KV 行数多时会撑高面板而非滚动——批20 候选。
+- **xl 断点结构性差异（批20 发现，未来批次候选）**：web 右列是 `flex min-h-0 flex-1 flex-col xl:flex-row`——客户端宽 ≥1280 时请求 pane 与响应 pane **并排**（Postman 式），<1280 才堆叠。原生默认窗口客户区 1264 属堆叠区、与 web 一致；窗口拉宽后原生仍堆叠，需要按宽度切换布局才能追平。
 - 键盘路径：web 删除钮有 `focus-visible:opacity-100` 兜底、输入有 ring，原生未做 focus-visible 显隐与 ring 绘制。
 - web 用 `crypto.randomUUID()`，原生用 8 字节随机 hex 作 KV id——格式不同但都是唯一串，库间互换无碍，别当缺陷改。
+
+### 批20 记录（tab 面板滚动容器）
+
+web 面板是 `min-h-0 max-h-[46vh] flex-1 overflow-y-auto px-4 py-3 xl:max-h-none`。原生实现（mainPane）：外包一层自测高的 `Column(MaxHeightPercent(46))`，内放 `Scroll(FillHeight().FillWidth().TrackScroll(&a.panelScroll))`，再内是带 20/20 内距的内容列——内容不超限时面板=内容高，超限封顶滚动。10 行参数实测：封顶 ~354px、滚轮滚动、滚动态下继续加行、切 tab 双向复位全部通过；明暗回归发布/请求头/表单与批19 无差。
+
+- **cap 基准**：mygo 视图拿不到窗口高，`MaxHeightPercent` 按父容器（Split 右 pane）解析——46% × 771 = 354，web 是 46% × 视口 812 = 373，差 ~19px（滚动起点略早）。已知近似，别当缺陷修。
+- **tab 复位**：`TrackScroll` 挂 app 自有的 `ui.ScrollState`，`a.panelTab != a.edit.tab` 时换新零值 state——对应 web TabsContent 每次切换重挂、滚动归位的语义。
+- mygo 滚动条与 web 的细滚动条（`scrollbar-width:thin`）观感不同（悬停瞬显），未深究。
+
+### 批20 踩坑（复用价值高）
+
+- **`ui.Scroll` 不按内容自测高**：文档明说「Give it a size, or Grow it within its parent」，示例全部 `Grow(1)`/`Fill()`。直接塞进竖排 Column 会塌成几十像素（首版面板只剩一行高）。要「内容高、到顶封顶」必须外包一层能自测高的 `Column(MaxHeightPercent(n))`，Scroll 用 `FillHeight()` 填满它——Column 的 cap 与内容测量都正常（对照实验证实）。
+- **滚轮注入**：`mouse_event` 的 wheel `dwData` 是**带符号 DWORD**（P/Invoke 签名必须 `int`，uint 收不了负数）；正 delta = 向上滚。Win32 滚轮发给焦点窗口，注入前 SetForegroundWindow。
+- mygo 内置 agent 自动化 CLI（`internal/automationcli`，配 `plugins/automation` 的 socket：snapshot/click/wheel/insertText/screenshot/diff）。本应用未挂该插件，继续用 PowerShell 屏幕注入（shot 脚本在 %TEMP%\reqbox-batch19）；哪天要挂，app `mygo.Use` 该插件 + `$MYGO_AUTOMATION` 指向 socket 即可。
 
 ### 批19 实证结论（此前标的未验证假设，全部有了答案）
 
@@ -191,7 +205,7 @@ KV 编辑器：
 - **14px 复选框**：`CheckboxBase` + `Box.Size(14,14).Radius(2)` + `DrawOver(StrokePath)` 自绘；勾路径复刻主题未导出的 `checkPath`（`widgets.go:216`）。选中填充色与 web 逐像素一致（亮 ring = R58 G117 B175）。
 - **复选框明暗规则（本批新发现，逐像素实测）**：页面 CSS 没有 `color-scheme` 声明，Chromium 按页面底色自适应控件——未选中框**跟应用主题**而非 OS：亮主题白底 #767676 框，暗主题 #222325 底 #434446 框；选中 = ring 填充 + 对比色勾（亮 ring 白勾 / 暗 ring 深勾）。原生已按此实现（`webBox`）。
 - **Mock URL**：web 显示 `window.location.origin`（即 5178），原生显示 `a.mockAddr`（网关实际端口，5178 被占时是随机端口）——有意差异，对照时别当缺陷改。
-- web 面板 `overflow-y-auto` 的滚动容器原生侧仍未做（见上「剩余步骤」）。
+- ~~web 面板 `overflow-y-auto` 的滚动容器原生侧仍未做~~ **批20 已落地**（见下「批20 记录」）。
 
 ### 批19 踩坑（复用价值高的三条）
 

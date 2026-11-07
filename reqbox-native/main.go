@@ -36,6 +36,11 @@ type app struct {
 	methodPick string
 	bodyBuf    *editor.Buffer
 	bodyState  *editor.State
+	// panelTab and panelScroll keep the tab panel's scroll place: the
+	// web's TabsContent remounts on a switch, so the panel opens at the
+	// top of whatever tab it shows.
+	panelTab    string
+	panelScroll ui.ScrollState
 
 	sideTab    string // "requests" or "history"
 	hist       []store.HistoryEntry
