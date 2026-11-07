@@ -137,13 +137,14 @@ mygo.NewWindow(mygo.WindowOptions{URL: "/"})
 
 ### 推送链
 
-- `origin/main` = `6cf50ab`；本地 `main` 领先 8 个提交未推送（批14–18 六次 + 交接文档及其校订），`git status -sb` 可复核。
+- 2026-11-07 交接后已推送（用户「提交推送」）：批14–18 六次 + 交接文档两次 + 图标预备一次，`git status -sb` 显示与 `origin/main` 齐平、工作区干净；接手先 `git fetch` 复核，别按记忆里的 hash 行事。
 - 交接默认不推送；远端只有 `iamartinlong/mygo-example`，推之前先 `git fetch` 比对。
 
-### 已落地的部分（未提交，属 WIP）
+### 已落地的部分（提交 `04a8538`）
 
 - `reqbox-native/icons/trash.svg`、`reqbox-native/icons/globe.svg`（lucide 原样转写，stroke=currentColor，24 viewBox）+ `icons.go` 注册 `iconTrash`/`iconGlobe`。
-- 证据：`gofmt`（仅 `i18n_table.go` 因历史 CRLF 被标记，非本批引入，别顺手改）、`go vet`、`go build` 全过；启动后进程存活 8 秒无 panic，说明两张 SVG 的 `mustIcon` 解析通过。界面截图未做逐像素对照——这两张图在界面上还没有使用者。
+- 证据：`go vet`、`go build` 全过；启动后进程存活 8 秒无 panic，说明两张 SVG 的 `mustIcon` 解析通过。**没有**逐像素界面对照——这两张图在界面上还没有使用者，面板接入后仍需补验。
+- `gofmt` 只标出 `i18n_table.go` 的历史 CRLF，非本批引入，别顺手改。
 
 ### 已核对的 web 基线事实源
 
