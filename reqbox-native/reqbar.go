@@ -71,6 +71,9 @@ func kvID() string {
 
 // mainPane is the workspace: title row, request bar, tab strip, the
 // Params/Headers/Body/Auth editors, then the run bar and response pane.
+// Below 1280px of client width the response stacks under the request, as
+// the web does; from there on they sit side by side (its xl:flex-row)
+// with a hairline between.
 func (a *app) mainPane(c *ui.Context, p palette) {
 	if a.edit.id != a.selectedID {
 		a.loadEdit()
@@ -84,37 +87,65 @@ func (a *app) mainPane(c *ui.Context, p palette) {
 		a.requestBar(c, p)
 		a.fullURLRow(c, p)
 		a.curlRow(c, p)
-		a.tabStrip(c, p)
-		// The web's tab group and panel: an 8px gap to a panel padded 12px
-		// top and bottom, so 20px of lead before the content and 20px after
-		// it. The panel takes its content's height up to 46vh — 46% of the
-		// pane here, the closest mygo's view gets to the viewport — and
-		// scrolls beyond it, as the web's overflow-y-auto does. A tab
-		// switch remounts the panel, so its scroll starts over at the top.
-		if a.panelTab != a.edit.tab {
-			a.panelTab = a.edit.tab
-			a.panelScroll = ui.ScrollState{}
+		cw := 0
+		if a.win != nil {
+			cw, _ = a.win.ContentSize()
 		}
-		ui.Column(c).FillWidth().MaxHeightPercent(46).Children(func() {
-			ui.Scroll(c).FillHeight().FillWidth().TrackScroll(&a.panelScroll).Children(func() {
-				ui.Column(c).FillWidth().Padding(20, 0, 20, 0).Children(func() {
-					switch a.edit.tab {
-					case "Params":
-						a.kvEditor(c, p, "parameter", &a.edit.params)
-					case "Headers":
-						a.kvEditor(c, p, "header", &a.edit.headers)
-					case "Body":
-						a.bodyPane(c, p)
-					case "Auth":
-						a.authPane(c, p)
-					case "Publish":
-						a.publishPane(c, p)
-					}
+		if cw >= 1280 {
+			ui.Row(c).Grow(1).Children(func() {
+				ui.Column(c).Grow(1).FillHeight().
+					BorderWidth(0, 1, 0, 0).BorderColor(p.border.color()).
+					Children(func() {
+						a.tabStrip(c, p)
+						a.panelArea(c, p, false)
+						a.runBar(c, p)
+					})
+				ui.Column(c).Grow(1).FillHeight().Children(func() {
+					a.responsePane(c, p)
 				})
 			})
-		})
+			return
+		}
+		a.tabStrip(c, p)
+		a.panelArea(c, p, true)
 		a.runBar(c, p)
 		a.responsePane(c, p)
+	})
+}
+
+// panelArea is the web's tab panel: content height capped at 46% of the
+// pane while the layout stacks (the web's 46vh; mygo's view has no window
+// height, so the pane stands in), filling the request pane from the 1280px
+// breakpoint on, scrolling either way, as the web's overflow-y-auto does.
+// A tab switch remounts the panel, so its scroll starts over at the top.
+func (a *app) panelArea(c *ui.Context, p palette, capped bool) {
+	if a.panelTab != a.edit.tab {
+		a.panelTab = a.edit.tab
+		a.panelScroll = ui.ScrollState{}
+	}
+	wrapper := ui.Column(c).FillWidth()
+	if capped {
+		wrapper = wrapper.MaxHeightPercent(46)
+	} else {
+		wrapper = wrapper.Grow(1)
+	}
+	wrapper.Children(func() {
+		ui.Scroll(c).FillHeight().FillWidth().TrackScroll(&a.panelScroll).Children(func() {
+			ui.Column(c).FillWidth().Padding(20, 0, 20, 0).Children(func() {
+				switch a.edit.tab {
+				case "Params":
+					a.kvEditor(c, p, "parameter", &a.edit.params)
+				case "Headers":
+					a.kvEditor(c, p, "header", &a.edit.headers)
+				case "Body":
+					a.bodyPane(c, p)
+				case "Auth":
+					a.authPane(c, p)
+				case "Publish":
+					a.publishPane(c, p)
+				}
+			})
+		})
 	})
 }
 

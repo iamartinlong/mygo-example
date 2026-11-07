@@ -131,7 +131,7 @@ mygo.NewWindow(mygo.WindowOptions{URL: "/"})
 
 每批完成 = 编译 + 真机运行 + 截图与 web 版同面板对照 + 提交。
 
-## 九、交接点（2026-11-07，批19–20 完成）
+## 九、交接点（2026-11-07，批19–21 完成）
 
 目标：把参数/请求头 KV 编辑器与发布面板按 web 基线重做（批15–18 已把请求框、标签条、Body/Auth 对齐）。**批19 已完成**：`reqbar.go` 的 `kvEditor` 重写为 tF 网格（eyebrow 表头 + border/60 发丝线、24/1fr/1.4fr/32 列 + gap 8、行高 32 radius 4、未启用整行 Opacity(0.45)、14px 复选框、28px mono 14 输入框无框/hover border/60/聚焦 border、hover 显 trash 14 删除钮 24×24、空态虚线 h-16 与非空小按钮 `mt-1.5` 双态、参数页脚 mono 10.5 按计数显隐、请求头页脚恒挂非 mono）；`publish.go` 的 `publishPane` 重写为 sF 堆叠（MaxWidth 512 gap 12：intro 12/1.625、开关卡=整卡 CheckboxBase radius 6 px-3 py-2.5 gap 10、路径名 iF（eyebrow/32px mono 14 输入 + outline sm 自动生成钮，暗色走 input token）、Mock URL 条 h-40 muted/50（globe 14 text-ok + mono 11 + ghost xs 复制钮）、覆盖卡 mt-1 radius 6 border-border/60 bg-muted/30）。明暗 × 参数/请求头/Body=form/发布 八张截图对照通过，截图仅本地 temp 不入库。
 
@@ -178,11 +178,20 @@ KV 编辑器：
 
 ### 剩余步骤（按序）
 
-批19、批20 均已落地（批19：kvEditor/publishPane 重写+对照；批20：tab 面板滚动容器）。留给下一批的已知差距：
+批19–21 均已落地（批19：kvEditor/publishPane 重写+对照；批20：tab 面板滚动容器；批21：xl 并排布局）。留给下一批的已知差距：
 
-- **xl 断点结构性差异（批20 发现，未来批次候选）**：web 右列是 `flex min-h-0 flex-1 flex-col xl:flex-row`——客户端宽 ≥1280 时请求 pane 与响应 pane **并排**（Postman 式），<1280 才堆叠。原生默认窗口客户区 1264 属堆叠区、与 web 一致；窗口拉宽后原生仍堆叠，需要按宽度切换布局才能追平。
 - 键盘路径：web 删除钮有 `focus-visible:opacity-100` 兜底、输入有 ring，原生未做 focus-visible 显隐与 ring 绘制。
 - web 用 `crypto.randomUUID()`，原生用 8 字节随机 hex 作 KV id——格式不同但都是唯一串，库间互换无碍，别当缺陷改。
+
+### 批21 记录（xl 并排布局）
+
+web 右列在 cURL 行之下是 `flex min-h-0 flex-1 flex-col xl:flex-row`：<1280 客户端宽堆叠，≥1280 请求 pane 与响应 pane **并排**（各 flex-1，请求侧 `xl:border-r`），且运行条在请求侧 Tabs 内 `hairline-t mt-auto` 钉底、面板 `xl:max-h-none`（去 46vh 上限、`overflow-y-auto` 仍在）。原生实现（mainPane）：视图内每帧 `a.win.ContentSize()`（`onMain` 主线程内联，安全）≥1280 时走 `Row`：左 `Column(Grow(1) FillHeight, border-r)` 装 tabStrip+panelArea(false)+runBar，右 `Column(Grow(1) FillHeight)` 装 responsePane；否则维持堆叠（panelArea(true)）。panelArea 从 mainPane 抽出，cap/无 cap 两态。实测：默认 1264 堆叠与批20 无差；拉宽到 1584 并排（左右各半、hairline、运行条钉底）、18 行溢出后左栏独立滚动、右栏不动、明暗两态通过。
+
+### 批21 踩坑
+
+- **Row 里子元素宽度是 fit-content**：响应面板外壳 Column 直接放进并排 Row，宽度塌成文字宽（265px）——`FillHeight` 只管高，Row 的 main 是横向。要用一层 `Column(Grow(1) FillHeight)` 包住（Column 的 cross=宽，stretch 铺满）。
+- `Window.ContentSize()`/`Size()` 可在视图帧内直接调（`onMain` 检测主线程后内联执行，不入队）；`OnResize` 回调也可用但此场景不需要。
+- mygo 内置 automation CLI 仍未接入；resize 注入用 `SetWindowPos`（注意截图脚本先读 rect 后做动作的话，crop 前要重读 rect）。
 
 ### 批20 记录（tab 面板滚动容器）
 
