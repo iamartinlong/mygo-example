@@ -131,7 +131,7 @@ mygo.NewWindow(mygo.WindowOptions{URL: "/"})
 
 每批完成 = 编译 + 真机运行 + 截图与 web 版同面板对照 + 提交。
 
-## 九、交接点（2026-11-07，批19–21 完成）
+## 九、交接点（2026-11-07，批19–22 完成）
 
 目标：把参数/请求头 KV 编辑器与发布面板按 web 基线重做（批15–18 已把请求框、标签条、Body/Auth 对齐）。**批19 已完成**：`reqbar.go` 的 `kvEditor` 重写为 tF 网格（eyebrow 表头 + border/60 发丝线、24/1fr/1.4fr/32 列 + gap 8、行高 32 radius 4、未启用整行 Opacity(0.45)、14px 复选框、28px mono 14 输入框无框/hover border/60/聚焦 border、hover 显 trash 14 删除钮 24×24、空态虚线 h-16 与非空小按钮 `mt-1.5` 双态、参数页脚 mono 10.5 按计数显隐、请求头页脚恒挂非 mono）；`publish.go` 的 `publishPane` 重写为 sF 堆叠（MaxWidth 512 gap 12：intro 12/1.625、开关卡=整卡 CheckboxBase radius 6 px-3 py-2.5 gap 10、路径名 iF（eyebrow/32px mono 14 输入 + outline sm 自动生成钮，暗色走 input token）、Mock URL 条 h-40 muted/50（globe 14 text-ok + mono 11 + ghost xs 复制钮）、覆盖卡 mt-1 radius 6 border-border/60 bg-muted/30）。明暗 × 参数/请求头/Body=form/发布 八张截图对照通过，截图仅本地 temp 不入库。
 
@@ -178,10 +178,27 @@ KV 编辑器：
 
 ### 剩余步骤（按序）
 
-批19–21 均已落地（批19：kvEditor/publishPane 重写+对照；批20：tab 面板滚动容器；批21：xl 并排布局）。留给下一批的已知差距：
+批19–22 均已落地（批19：kvEditor/publishPane 重写+对照；批20：tab 面板滚动容器；批21：xl 并排布局；批22：响应面板按 web cF 重建）。留给下一批的已知差距：
 
+- 响应面板的已知近似：长响应体的编辑器原生固定高（224/192px）内部滚动，web 是编辑器自增长、面板滚动；历史重放的请求头/请求体来自快照（替换前的草稿）而非 web history API 存的实际发送值；等待骨架无 pulse 动画（mygo 无对应动画）。
 - 键盘路径：web 删除钮有 `focus-visible:opacity-100` 兜底、输入有 ring，原生未做 focus-visible 显隐与 ring 绘制。
 - web 用 `crypto.randomUUID()`，原生用 8 字节随机 hex 作 KV id——格式不同但都是唯一串，库间互换无碍，别当缺陷改。
+- 历史标签页、五个对话框、侧栏环境面板仍未做逐像素对照（批 5–13 建的功能体，批 14–22 的对照没扫到）。
+
+### 批22 记录（响应面板按 web cF 重建）
+
+web 响应区结构：状态行（h-9 border-b）+ 4 个线型标签（请求头/请求体/预览/响应，纯 mono 计数）+ 滚动面板。原生 response.go 全部重建：
+
+- **状态行**：状态 mono 12 粗体按 web vh 着色（**0 mutedFg / 2xx ok / 3xx warn / 其余 bad**——修正了旧实现的背景药丸与 3xx accent、4xx warn 两处错配）；statusText、`·` 分隔、时长 bh（≥1s 显示 `x.xx s`）、大小 yh（**MB 两位小数**，旧实现一位）、环境名段、truncated 徽标（bg-warn/15）；右侧下载（存对话框）+ 复制▾（PopoverBase 单项菜单）。
+- **四个标签页**：Headers = 概要折叠区（8 行 fact 两列网格 + 发丝分隔；状态行值着色粗体）+ 响应头/请求头折叠列表（字典序、1fr/1.7fr 网格）+ Cookies + 计时折叠条形图（120px/1fr/56px 三列、track muted/60、fill fg/40、备注行 `· ` 连接）；Request = 替换后请求体编辑器或虚线空注（`类型：无`）；Preview = 错误框/图片（base64 解码 `ui.Image`）/二进制虚线注/高亮编辑器；Response = raw 纯文本编辑器或 binary 提示。全部 `editor.State{ReadOnly: true}`；折叠区默认开（`respClosed` 反集）；tab 切换滚动复位（TrackScroll 惯用法）。
+- **验证**：200 路径（状态行/tabs/JSON 预览）、404 路径、错误路径（失败状态行 + 概要失败态 + 预览/响应错误框 + 请求体虚线注）、Headers 折叠区与头列表（排序、着色、粗体）真机全过；成功路径与 webview 同响应并排放大对比一致。
+
+### 批22 踩坑
+
+- mygo v0.7.4 **没有 `MenuBase`**（_research 克隆是更新的源码）——自定义触发器的下拉用 `PopoverBase(anchor, open, fn)`：面板 `Margin(4,0,0,0)` 留顶隙、外部点击/Escape 自动关（`*open` 置回）。
+- **webview（reqbox-desktop）侧的 UI 自动化不可靠**：`SendKeys` 的 `^a` 能到、`^v` 剪贴板粘贴不生效；注入点击有时不触发按钮。对照时以 native 侧为主，webview 只取静态态（如空态）或改用其数据文件。
+- **截图要复核"截到的是哪个窗口"**：截图脚本按目标窗口 rect 裁剪，但若 `SetForegroundWindow` 失败、目标窗口被同位置的原生窗口盖住，裁剪到的是别人的像素（批22 的 r3 假成功就是这么来的）——用内容特征（标题栏、语言、布局）确认后再采信。
+- 两 app 的 `PathUserData` 不同（exe 名不同 → 不同 DB）：webview 的 locale/环境/历史是它自己的，别拿 native 的 DB 状态去解释 webview 的显示。
 
 ### 批21 记录（xl 并排布局）
 
