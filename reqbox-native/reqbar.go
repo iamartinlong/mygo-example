@@ -461,63 +461,205 @@ func tabBadge(c *ui.Context, p palette, n int) {
 	})
 }
 
-// kvEditor edits one KV list: column eyebrows, then rows of
-// checkbox + key + value + delete. what is the kv.* noun: parameter,
-// header or field; its add-row label has its own key.
+// kvAddKey names each editor's full-width add offer label.
 var kvAddKey = map[string]string{
 	"parameter": "kv.addQueryParam", "header": "kv.addHeader", "field": "kv.addFormField",
 }
 
+// kvPlaceholders are the web's eF pairs: what the key and value boxes
+// suggest per editor kind.
+var kvPlaceholders = map[string][2]string{
+	"parameter": {"limit", "10"},
+	"header":    {"Authorization", "Bearer …"},
+	"field":     {"field", "value"},
+}
+
+// kvEditor edits one KV list on the web's tF grid: an eyebrow header over
+// a border/60 hairline, rows of check box + key + value + delete, then
+// either the dashed empty offer or the rows with a small add button, and
+// the per-kind footer note. what is the kv.* noun: parameter, header or
+// field.
 func (a *app) kvEditor(c *ui.Context, p palette, what string, kvs *[]store.KV) {
-	ui.Row(c).Height(23).Padding(0, 16, 6, 16).Gap(8).
-		AlignItems(ui.End).Children(func() {
-		ui.Row(c).Width(24)
-		ui.Text(c, strings.ToUpper(tr("kv."+what))).FontSize(11).LetterSpacing(1.5).
-			Font("JetBrains Mono").SingleLine().TextColor(p.mutedFg.color()).Grow(2)
-		ui.Text(c, strings.ToUpper(tr("kv.value"))).FontSize(11).LetterSpacing(1.5).
-			Font("JetBrains Mono").SingleLine().TextColor(p.mutedFg.color()).Grow(3)
-		ui.Row(c).Width(24)
+	ph := kvPlaceholders[what]
+	ui.Column(c).Padding(0, 16, 0, 16).Children(func() {
+		// The web's grid: 24px check box, 1fr key, 1.4fr value, 32px
+		// delete, on 8px gaps; px-1 inside the panel's px-4.
+		ui.Row(c).Padding(0, 4, 6, 4).Gap(8).AlignItems(ui.Center).
+			BorderWidth(0, 0, 1, 0).BorderColor(p.border.color().Alpha(0.6)).
+			Children(func() {
+				ui.Row(c).Width(24)
+				kvEyebrow(c, p, tr("kv."+what), 1)
+				kvEyebrow(c, p, tr("kv.value"), 1.4)
+				ui.Row(c).Width(32)
+			})
+		if len(*kvs) == 0 {
+			// The web's mt-2 h-16 dashed offer; no small button then.
+			ui.Row(c).Height(8)
+			a.kvAddButton(c, p, kvs, tr(kvAddKey[what]), true)
+		} else {
+			ui.Row(c).Height(4)
+			for i := range *kvs {
+				a.kvRow(c, p, ph, kvs, i)
+			}
+			ui.Row(c).Height(6)
+			ui.Row(c).Children(func() {
+				a.kvAddButton(c, p, kvs, tr("common.addRow"), false)
+			})
+		}
+		switch what {
+		case "parameter":
+			// The web's mono footer only once rows would be appended.
+			if enabledKV(*kvs) > 0 {
+				ui.Row(c).Height(12)
+				ui.Text(c, tr("kv.appendedOnSend")).FontSize(10.5).
+					Font("JetBrains Mono").
+					TextColor(p.mutedFg.color().Alpha(0.7))
+			}
+		case "header":
+			ui.Row(c).Height(12)
+			ui.Text(c, tr("kv.headerHint")).FontSize(10.5).
+				TextColor(p.mutedFg.color().Alpha(0.7))
+		}
 	})
-	for i := range *kvs {
-		i := i
-		ui.Row(c).Height(32).Padding(0, 16, 0, 16).Gap(8).
-			AlignItems(ui.Center).Children(func() {
-			if ui.Checkbox(c, &(*kvs)[i].Enabled, "").Changed() {
-				a.edit.dirty = true
+}
+
+// kvEyebrow is the header's column label: the web's .eyebrow, grown onto
+// its grid track.
+func kvEyebrow(c *ui.Context, p palette, label string, grow float32) {
+	ui.Text(c, strings.ToUpper(label)).FontSize(11).LetterSpacing(1.54).
+		LineHeight(1.4286).Font("JetBrains Mono").SingleLine().
+		TextColor(p.mutedFg.color()).Grow(grow).Basis(0).MinWidth(0)
+}
+
+// kvRow is one grid row: a 14px accent check box, the key and value
+// inputs, and a delete button the row's hover reveals, the whole row at
+// 45% while it is off, as the web's.
+func (a *app) kvRow(c *ui.Context, p palette, ph [2]string, kvs *[]store.KV, i int) {
+	kv := &(*kvs)[i]
+	row := ui.Row(c).Height(32).Padding(0, 4, 0, 4).Gap(8).
+		AlignItems(ui.Center).Radius(4)
+	if !kv.Enabled {
+		row.Opacity(0.45)
+	}
+	row.Children(func() {
+		ui.Row(c).Width(24).AlignItems(ui.Center).Children(func() {
+			webCheckbox(c, p, &kv.Enabled)
+		})
+		a.kvInput(c, p, &kv.Key, ph[0], 1)
+		a.kvInput(c, p, &kv.Value, ph[1], 1.4)
+		ui.Row(c).Width(32).AlignItems(ui.Center).Children(func() {
+			del := ui.Row(c).Width(24).Height(24).Radius(6).
+				AlignItems(ui.Center).Center()
+			if del.Hovered() {
+				// The web's ghost hover under the trash.
+				del.Background(p.muted.color())
 			}
-			if ui.TextInput(c, &(*kvs)[i].Key).Placeholder(tr("kv.key")).
-				Grow(2).Height(28).FontSize(12).Changed() {
-				a.edit.dirty = true
-			}
-			if ui.TextInput(c, &(*kvs)[i].Value).Grow(3).Height(28).
-				FontSize(12).Changed() {
-				a.edit.dirty = true
-			}
-			e := ui.Row(c).Width(24).Height(24).AlignItems(ui.Center).Center().
-				Children(func() {
-					ui.Icon(c, iconX).Size(12, 12).TextColor(p.mutedFg.color())
-				})
-			if e.Clicked() {
+			del.Children(func() {
+				// The web's group-hover reveal.
+				if row.Hovered() {
+					ui.Icon(c, iconTrash).Size(14, 14).
+						TextColor(p.foreground.color())
+				}
+			})
+			if del.Clicked() {
 				a.edit.dirty = true
 				*kvs = append((*kvs)[:i], (*kvs)[i+1:]...)
 			}
 		})
-	}
-	ui.Row(c).Height(72).Padding(8, 16, 0, 16).Children(func() {
-		e := ui.Row(c).Fill().Height(64).Radius(6).
-			Border(1, p.border.color()).BorderStyle(ui.BorderDashed).
-			AlignItems(ui.Center).Center().Children(func() {
-			ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
-				ui.Icon(c, iconPlus).Size(12, 12).TextColor(p.mutedFg.color())
-				ui.Text(c, tr(kvAddKey[what])).FontSize(12).SingleLine().
-					TextColor(p.mutedFg.color())
-			})
-		})
-		if e.Clicked() {
-			a.edit.dirty = true
-			*kvs = append(*kvs, store.KV{ID: kvID(), Enabled: true})
-		}
 	})
+}
+
+// kvInput is the web's KV text box: a 28px mono input without a frame
+// until the row hovers or the box focuses. grow puts it on the 1fr or
+// 1.4fr track.
+func (a *app) kvInput(c *ui.Context, p palette, value *string, placeholder string, grow float32) {
+	in := ui.TextInputBase(c, value).Grow(grow).Basis(0).MinWidth(0).
+		Height(28).Radius(8).FontSize(14).Font("JetBrains Mono").
+		Padding(0, 6, 0, 6).Placeholder(placeholder)
+	ink := p.border.color().Alpha(0)
+	if in.Hovered() {
+		ink = p.border.color().Alpha(0.6)
+	}
+	if in.Focused() {
+		ink = p.border.color()
+	}
+	in.Border(1, ink)
+	if in.Changed() {
+		a.edit.dirty = true
+	}
+}
+
+// kvAddButton adds a row: the full-width dashed offer while the list is
+// empty, the small ghost button under the rows otherwise, with the web's
+// hover states.
+func (a *app) kvAddButton(c *ui.Context, p palette, kvs *[]store.KV, label string, full bool) {
+	var e ui.Element
+	if full {
+		e = ui.Row(c).Fill().Height(64).Radius(6).Gap(6).
+			Border(1, p.border.color().Alpha(0.7)).BorderStyle(ui.BorderDashed).
+			AlignItems(ui.Center).Center()
+	} else {
+		e = ui.Row(c).Height(24).Padding(0, 8, 0, 8).Gap(4).
+			AlignItems(ui.Center)
+	}
+	ink := p.mutedFg.color()
+	if full {
+		if e.Hovered() {
+			// The web's hover:border-border hover:bg-accent/40.
+			e.Border(1, p.border.color()).Background(p.accent.color().Alpha(0.4))
+			ink = p.foreground.color()
+		}
+	} else if e.Hovered() {
+		// The web's ghost hover.
+		e.Background(p.muted.color())
+		ink = p.foreground.color()
+	}
+	e.Children(func() {
+		ui.Icon(c, iconPlus).Size(14, 14).TextColor(ink)
+		ui.Text(c, label).FontSize(12).SingleLine().TextColor(ink)
+	})
+	if e.Clicked() {
+		a.edit.dirty = true
+		*kvs = append(*kvs, store.KV{ID: kvID(), Enabled: true})
+	}
+}
+
+// webBox paints the web's 14px accent check box as Chromium does: the
+// ring colour under a check that contrasts with it when on; off, a white
+// box on a grey frame in the light theme and a dark one in the dark
+// theme, as the browser adapts the control to the page's ground.
+func webBox(c *ui.Context, p palette, checked bool) {
+	box := ui.Box(c).Size(14, 14).Radius(2)
+	if checked {
+		box.Background(p.ring.color())
+		// The check picks the ink that contrasts with the accent.
+		ink := ui.RGB(255, 255, 255)
+		if p.isDark {
+			ink = p.primaryFg.color()
+		}
+		box.DrawOver(func(pt *ui.Painter, r ui.Rect) {
+			pt.StrokePath(webCheckPath(r), 2, ink)
+		})
+	} else if p.isDark {
+		box.Background(ui.RGB(34, 35, 37)).Border(1, ui.RGB(67, 68, 70))
+	} else {
+		box.Background(ui.RGB(255, 255, 255)).Border(1, ui.RGB(118, 118, 118))
+	}
+}
+
+// webCheckbox is that box as a stand-alone 14px control.
+func webCheckbox(c *ui.Context, p palette, checked *bool) {
+	cb := ui.CheckboxBase(c, checked).Width(14).Height(14)
+	cb.Children(func() { webBox(c, p, *checked) })
+}
+
+// webCheckPath is mygo's checkPath, unexported there: the check stroke
+// the theme's own check box draws.
+func webCheckPath(r ui.Rect) *ui.Path {
+	var path ui.Path
+	return path.MoveTo(r.X+r.W*0.22, r.Y+r.H*0.52).
+		LineTo(r.X+r.W*0.42, r.Y+r.H*0.71).
+		LineTo(r.X+r.W*0.78, r.Y+r.H*0.31)
 }
 
 // fullURL joins the URL with enabled query params, as the web disclosure shows.

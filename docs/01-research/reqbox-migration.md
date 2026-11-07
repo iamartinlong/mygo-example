@@ -131,9 +131,9 @@ mygo.NewWindow(mygo.WindowOptions{URL: "/"})
 
 每批完成 = 编译 + 真机运行 + 截图与 web 版同面板对照 + 提交。
 
-## 九、交接点（2026-11-07，批19 进行中）
+## 九、交接点（2026-11-07，批19 完成）
 
-目标：把参数/请求头 KV 编辑器与发布面板按 web 基线重做（批15–18 已把请求框、标签条、Body/Auth 对齐）。
+目标：把参数/请求头 KV 编辑器与发布面板按 web 基线重做（批15–18 已把请求框、标签条、Body/Auth 对齐）。**批19 已完成**：`reqbar.go` 的 `kvEditor` 重写为 tF 网格（eyebrow 表头 + border/60 发丝线、24/1fr/1.4fr/32 列 + gap 8、行高 32 radius 4、未启用整行 Opacity(0.45)、14px 复选框、28px mono 14 输入框无框/hover border/60/聚焦 border、hover 显 trash 14 删除钮 24×24、空态虚线 h-16 与非空小按钮 `mt-1.5` 双态、参数页脚 mono 10.5 按计数显隐、请求头页脚恒挂非 mono）；`publish.go` 的 `publishPane` 重写为 sF 堆叠（MaxWidth 512 gap 12：intro 12/1.625、开关卡=整卡 CheckboxBase radius 6 px-3 py-2.5 gap 10、路径名 iF（eyebrow/32px mono 14 输入 + outline sm 自动生成钮，暗色走 input token）、Mock URL 条 h-40 muted/50（globe 14 text-ok + mono 11 + ghost xs 复制钮）、覆盖卡 mt-1 radius 6 border-border/60 bg-muted/30）。明暗 × 参数/请求头/Body=form/发布 八张截图对照通过，截图仅本地 temp 不入库。
 
 ### 推送链
 
@@ -143,7 +143,7 @@ mygo.NewWindow(mygo.WindowOptions{URL: "/"})
 ### 已落地的部分（提交 `04a8538`）
 
 - `reqbox-native/icons/trash.svg`、`reqbox-native/icons/globe.svg`（lucide 原样转写，stroke=currentColor，24 viewBox）+ `icons.go` 注册 `iconTrash`/`iconGlobe`。
-- 证据：`go vet`、`go build` 全过；启动后进程存活 8 秒无 panic，说明两张 SVG 的 `mustIcon` 解析通过。**没有**逐像素界面对照——这两张图在界面上还没有使用者，面板接入后仍需补验。
+- 证据：`go vet`、`go build` 全过；启动后进程存活 8 秒无 panic，说明两张 SVG 的 `mustIcon` 解析通过。~~面板接入后仍需补验~~ **批19 已补验**：trash 用在 KV 行 hover 删除钮、globe 用在 Mock URL 条，明暗截图对照通过。
 - `gofmt` 只标出 `i18n_table.go` 的历史 CRLF，非本批引入，别顺手改。
 
 ### 已核对的 web 基线事实源
@@ -178,14 +178,23 @@ KV 编辑器：
 
 ### 剩余步骤（按序）
 
-1. 重写 `reqbox-native/reqbar.go` 的 `kvEditor`：表头/行/空态/小按钮/页脚按上表；`what` 需同时驱动占位符对（`limit`/`10` 等）与 `common.addRow`；表单字段（Body→form）走同一函数。
-2. 重写 `reqbox-native/publish.go` 的 `publishPane`：512 宽 12 间距堆叠 + 开关卡 + 路径名行 + Mock URL 条 + 覆盖说明卡。
-3. `gofmt`/`vet`/`build` → 真机跑 → 截图对照参数、请求头、发布、Body=form 四个面板（明暗各一遍）→ 读全量 diff → 提交（不推送）→ 按名删临时件。
+批19 三步已全部落地（kvEditor 重写、publishPane 重写、vet/build/真机截图对照+提交）。留给下一批的已知差距：
 
-### 最大未验证假设
+- web 面板带 `max-h-[46vh] overflow-y-auto`，原生侧无滚动容器，KV 行数多时会撑高面板而非滚动——批20 候选。
+- 键盘路径：web 删除钮有 `focus-visible:opacity-100` 兜底、输入有 ring，原生未做 focus-visible 显隐与 ring 绘制。
+- web 用 `crypto.randomUUID()`，原生用 8 字节随机 hex 作 KV id——格式不同但都是唯一串，库间互换无碍，别当缺陷改。
 
-- mygo 无 CSS grid：列宽靠 `Grow(1)`/`Grow(1.4)` + `Basis(0)` + `MinWidth(0)` 复现 264.6:370.4 ≈ 1:1.4，小数 grow 未实测。
-- 行的 group-hover 删除钮：`Hovered()` 读实时 hover 链（`_research/mygo/ui/input.go:1350`），父行可用；但 `Opacity(0)` 的元素是否仍接点击未验证，web 还有 `focus-visible:opacity-100` 这条兜底路径。
-- 14px 复选框要自己画：主题内置 `Checkbox` 的盒子是 `Space(4)`=16px，得换 `CheckboxBase` + `Painter.Fill/StrokePath`（`ui.Path`/`Painter` 已导出）。
-- web 面板带 `max-h-[46vh] overflow-y-auto`，原生侧目前无滚动容器，行数多时的裁剪行为未验证。
-- Mock URL：web 显示 `window.location.origin`（即 5178），原生显示 `a.mockAddr`（网关实际端口，5178 被占时是随机端口）——这是有意的差异，原生显示真正可达的地址，对照时别当缺陷改。
+### 批19 实证结论（此前标的未验证假设，全部有了答案）
+
+- **小数 Grow 成立**：`Grow(1.4).Basis(0).MinWidth(0)` 按 `main = base + free*grow/sum`（`layout.go:1146`）精确复现 `minmax(0,1.4fr)`，列宽比与 web 一致。
+- **hover 显隐删除钮**：`row.Hovered()` 在子元素 Children 闭包里读父行有效（`input.go:1350` 实时 hover 链）；实现上未 hover 就不画图标（比 `Opacity(0)` 更稳，不可见即不可点）。
+- **14px 复选框**：`CheckboxBase` + `Box.Size(14,14).Radius(2)` + `DrawOver(StrokePath)` 自绘；勾路径复刻主题未导出的 `checkPath`（`widgets.go:216`）。选中填充色与 web 逐像素一致（亮 ring = R58 G117 B175）。
+- **复选框明暗规则（本批新发现，逐像素实测）**：页面 CSS 没有 `color-scheme` 声明，Chromium 按页面底色自适应控件——未选中框**跟应用主题**而非 OS：亮主题白底 #767676 框，暗主题 #222325 底 #434446 框；选中 = ring 填充 + 对比色勾（亮 ring 白勾 / 暗 ring 深勾）。原生已按此实现（`webBox`）。
+- **Mock URL**：web 显示 `window.location.origin`（即 5178），原生显示 `a.mockAddr`（网关实际端口，5178 被占时是随机端口）——有意差异，对照时别当缺陷改。
+- web 面板 `overflow-y-auto` 的滚动容器原生侧仍未做（见上「剩余步骤」）。
+
+### 批19 踩坑（复用价值高的三条）
+
+- mygo `Fill()` = **宽高都 100%**（`element.go:986`）。在竖排 Column 里给卡片用 `Fill()` 会把剩余高度整个吃掉（首版开关卡变 330px 巨框）；横向铺满用 `FillWidth()` 或干脆靠默认 cross-stretch。
+- Children 闭包里的 `return` 会**跳过闭包里它之后的所有兄弟节点**——kvEditor 空态分支用 `return` 跳过行循环时把页脚 switch 也吞了。分支要用 if/else，别用 return。
+- UI 自动化：`GetWindowRect` 含 DWM 不可见边框，客户区原点在 rect 内缩 **(8,0)**（Win10 隐藏标题栏）——点 14px 小目标必须用 `ClientToScreen` 客户区坐标，rect 坐标系统性偏左 8px。中文 IME 会拦截 `SendKeys` 组合成候选词，注入文本用「ESC 取消候选 + Set-Clipboard + ^v 粘贴」。本环境 python3 不可用（exit 49），文本处理用 sed/heredoc。
