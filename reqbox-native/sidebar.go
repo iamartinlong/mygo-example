@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -88,7 +89,7 @@ func (a *app) refresh() {
 		a.selectedID = a.reqs[0].ID
 	}
 	a.rebuildRows()
-	a.hist, _ = a.st.ListHistory(a.filter, 100)
+	a.hist, _ = a.st.ListHistory(a.histFilter, 100)
 	a.histSel = -1
 	a.loadEnvs()
 }
@@ -147,15 +148,17 @@ func (a *app) sidebarPane(c *ui.Context, p palette) {
 				a.pill(c, p, tr("sidebar.history"), len(a.hist), "history")
 			})
 		})
-		a.filterRow(c, p)
 		if a.st == nil {
 			return
 		}
+		// The history tab replaces the requests filter row with its own
+		// search, as the web's Eh fragment does.
 		if a.sideTab == "history" {
 			a.historyPane(c, p)
 			a.footerRow(c, p)
 			return
 		}
+		a.filterRow(c, p)
 		a.list.Selected = &a.selRow
 		// Grow(1) is the web's flex-1 min-h-0: it pushes the footer bar down
 		// to the bottom of the rail instead of leaving it under the last row.
@@ -175,69 +178,117 @@ func (a *app) sidebarPane(c *ui.Context, p palette) {
 	})
 }
 
-// historyPane lists recorded runs, newest first; clicking one with its
-// originating request still on file re-opens that run in the workspace.
+// historyPane lists recorded runs, newest first, with its own search row
+// and a trash to clear everything; clicking a row whose originating
+// request is still on file re-opens that run in the workspace.
 func (a *app) historyPane(c *ui.Context, p palette) {
-	if len(a.hist) == 0 {
-		ui.Column(c).Grow(1).Padding(12, 12, 0, 12).Children(func() {
-			ui.Text(c, tr("sidebar.noHistory")).FontSize(11.5).TextColor(p.mutedFg.color())
+	// The web's search row: a muted field with its own placeholder and the
+	// clear-all trash beside it, replacing the requests filter row.
+	ui.Row(c).Height(38).Padding(10, 12, 4, 12).Gap(6).
+		AlignItems(ui.Center).Children(func() {
+		ui.Row(c).Grow(1).Height(28).Radius(8).
+			Background(p.muted.color().Alpha(0.5)).Padding(0, 8, 0, 8).Gap(6).
+			AlignItems(ui.Center).Children(func() {
+			ui.Icon(c, iconSearch).Size(12, 12).TextColor(p.mutedFg.color())
+			if ui.TextInputBase(c, &a.histFilter).Grow(1).Height(28).
+				FontSize(12).Placeholder(tr("sidebar.searchHistory")).Changed() {
+				if a.st != nil {
+					a.hist, _ = a.st.ListHistory(a.histFilter, 100)
+					a.histSel = -1
+				}
+			}
 		})
+		del := ui.Row(c).Width(24).Height(24).Radius(6).
+			AlignItems(ui.Center).Center()
+		ink := p.mutedFg.color()
+		if del.Hovered() {
+			del.Background(p.muted.color())
+			ink = p.foreground.color()
+		}
+		del.Children(func() {
+			ui.Icon(c, iconTrash).Size(12, 12).TextColor(ink)
+		})
+		if del.Clicked() {
+			a.askConfirm(tr("confirm.clearHistory.title"),
+				tr("confirm.clearHistory.desc"),
+				tr("confirm.clearHistory.confirm"), func() { a.pending.clearHist = true })
+			a.applyPending()
+		}
+	})
+	if len(a.hist) == 0 {
+		ui.Column(c).Grow(1).Padding(32, 12, 0, 12).AlignItems(ui.Center).
+			Children(func() {
+				ui.Icon(c, iconHistory).Size(20, 20).
+					TextColor(p.mutedFg.color().Alpha(0.5))
+				ui.Row(c).Height(8)
+				ui.Text(c, tr("sidebar.noHistory")).FontSize(12).
+					TextColor(p.mutedFg.color())
+			})
 		return
 	}
 	a.histList.Selected = &a.histSel
-	e := ui.List(c, &a.histList, len(a.hist),
-		func(i int) { a.histRowView(c, p, i) }).Grow(1)
-	e.ItemKey(func(i int) any { return a.hist[i].ID })
-	if e.Changed() && a.histSel >= 0 {
-		a.viewHistoryEntry(a.histSel)
-	}
-	a.applyPending()
-	ui.Row(c).Height(34).Padding(0, 12, 0, 12).AlignItems(ui.Center).
-		Children(func() {
-			e := ui.Text(c, tr("sidebar.clearAll")).FontSize(11.5).SingleLine().
-				TextColor(p.bad.color())
-			if e.Clicked() {
-				a.askConfirm(tr("confirm.clearHistory.title"),
-					tr("confirm.clearHistory.desc"),
-					tr("confirm.clearHistory.confirm"), func() { a.pending.clearHist = true })
-				a.applyPending()
-			}
-		})
+	ui.Column(c).Grow(1).Padding(0, 8, 12, 8).Children(func() {
+		e := ui.List(c, &a.histList, len(a.hist),
+			func(i int) { a.histRowView(c, p, i) }).Fill()
+		e.ItemKey(func(i int) any { return a.hist[i].ID })
+		if e.Changed() && a.histSel >= 0 {
+			a.viewHistoryEntry(a.histSel)
+		}
+		a.applyPending()
+	})
 }
 
+// histRowView is the web's history row: status, method and age on the
+// first line, the name, then the duration and the request path, with a
+// trash the row's hover reveals.
 func (a *app) histRowView(c *ui.Context, p palette, i int) {
 	h := a.hist[i]
-	row := ui.Row(c).Fill().Padding(6, 10, 6, 10).Gap(8).
-		AlignItems(ui.Center)
-	if h.ID == a.histOpenID {
-		row = row.Background(p.accent.color())
+	row := ui.Row(c).Fill().Padding(6, 4, 6, 8).Gap(8).AlignItems(ui.Start).
+		Radius(6)
+	if row.Hovered() {
+		row.Background(p.accent.color().Alpha(0.5))
 	}
 	row.Children(func() {
-		m := p.method(h.Method)
-		ui.Row(c).Height(18).Padding(0, 6, 0, 6).AlignItems(ui.Center).
-			Background(m.color().Alpha(0.1)).Children(func() {
-			ui.Text(c, h.Method).FontSize(9).Font("JetBrains Mono").
-				TextColor(m.color())
-		})
-		ui.Column(c).Grow(1).Gap(1).Children(func() {
-			ui.Text(c, h.Name).FontSize(12.5).SingleLine()
-			ui.Text(c, displayURL(h.URL)).FontSize(11).Font("JetBrains Mono").
-				SingleLine().TextColor(p.mutedFg.color())
-		})
-		ui.Column(c).Gap(1).AlignItems(ui.End).Children(func() {
-			if h.OK {
-				ui.Text(c, strconv.Itoa(h.Status)).FontSize(10.5).
-					Font("JetBrains Mono").FontFeatures("tnum").
-					SingleLine().TextColor(p.ok.color())
-			} else {
-				ui.Text(c, tr("common.failed")).FontSize(10.5).SingleLine().
-					TextColor(p.bad.color())
+		ui.Column(c).Grow(1).Basis(0).MinWidth(0).Gap(1).Children(func() {
+			ui.Row(c).FillWidth().Height(16).Gap(6).AlignItems(ui.Center).
+				Children(func() {
+					status := strconv.Itoa(h.Status)
+					ink := p.bad.color()
+					switch {
+					case h.Status == 0:
+						status = tr("sidebar.err")
+						ink = p.mutedFg.color()
+					case h.Status >= 200 && h.Status < 300:
+						ink = p.ok.color()
+					}
+					ui.Text(c, status).FontSize(10).Bold().
+						Font("JetBrains Mono").FontFeatures("tnum").
+						SingleLine().TextColor(ink)
+					ui.Text(c, h.Method).FontSize(10).Font("JetBrains Mono").
+						SingleLine().TextColor(p.mutedFg.color())
+					ui.Row(c).Grow(1)
+					ui.Text(c, timeAgo(h.CreatedAt.Time)).FontSize(10).
+						Font("JetBrains Mono").SingleLine().
+						TextColor(p.mutedFg.color().Alpha(0.7))
+				})
+			name := h.Name
+			if name == "" {
+				name = h.URL
 			}
-			ui.Text(c, timeAgo(h.CreatedAt.Time)).FontSize(10.5).SingleLine().
-				TextColor(p.mutedFg.color())
+			ui.Text(c, name).FontSize(12).
+				TextColor(p.foreground.color().Alpha(0.85))
+			ui.Text(c, fmt.Sprintf("%d ms · %s", h.DurationMs, displayURL(h.URL))).
+				FontSize(10).Font("JetBrains Mono").
+				TextColor(p.mutedFg.color().Alpha(0.7))
 		})
-	}).ContextMenu(func(m *ui.Menu) {
-		if m.Item(tr("sidebar.deleteHistoryEntry")).Chosen() {
+		del := ui.Row(c).Width(24).Height(24).AlignItems(ui.Center).Center()
+		del.Children(func() {
+			// The web's group-hover reveal.
+			if row.Hovered() {
+				ui.Icon(c, iconTrash).Size(12, 12).TextColor(p.mutedFg.color())
+			}
+		})
+		if del.Clicked() {
 			a.pending.deleteHist = h.ID
 		}
 	})
@@ -276,9 +327,6 @@ func (a *app) filterRow(c *ui.Context, p palette) {
 			Placeholder(tr("sidebar.filterRequests"))
 		if a.filterChanged() {
 			a.rebuildRows()
-			if a.sideTab == "history" && a.st != nil {
-				a.hist, _ = a.st.ListHistory(a.filter, 100)
-			}
 		}
 		a.iconBtn(c, p, iconFolderPlus, &a.pending.newCollection)
 		a.iconBtn(c, p, iconPlus, &a.pending.newRequest)
@@ -356,33 +404,66 @@ func (a *app) sideRowView(c *ui.Context, p palette, i int) {
 	})
 }
 
-// displayURL strips the scheme and host, as the web subtitle shows the path.
+// displayURL is the web's Sh: the URL's path, its host when the path is
+// the root, or a note when there is nothing to show.
 func displayURL(raw string) string {
-	if i := strings.Index(raw, "://"); i >= 0 {
-		rest := raw[i+3:]
-		if j := strings.Index(rest, "/"); j >= 0 {
-			return rest[j:]
-		}
-		return "/"
+	t := strings.TrimSpace(raw)
+	if t == "" {
+		return "no URL"
 	}
-	return raw
+	if !strings.Contains(t, "://") {
+		t = "http://" + t
+	}
+	rest := t
+	if i := strings.Index(t, "://"); i >= 0 {
+		rest = t[i+3:]
+	}
+	if j := strings.Index(rest, "/"); j >= 0 {
+		if path := rest[j:]; path != "/" {
+			return path
+		}
+		return rest[:j]
+	}
+	return rest
 }
 
+// timeAgo is the web's relative age, worded for the shown language and
+// falling back to the date after a month.
 func timeAgo(t time.Time) string {
 	if t.IsZero() {
 		return ""
 	}
 	d := time.Since(t)
+	zh := appLang == "zh"
+	sec := int(d.Seconds())
+	if sec < 0 {
+		sec = 0
+	}
 	switch {
-	case d < time.Minute:
+	case sec < 60:
+		if zh {
+			return "刚刚"
+		}
 		return "just now"
-	case d < time.Hour:
-		return strconv.Itoa(int(d.Minutes())) + "m ago"
-	case d < 24*time.Hour:
-		return strconv.Itoa(int(d.Hours())) + "h ago"
-	case d < 7*24*time.Hour:
-		return strconv.Itoa(int(d.Hours()/24)) + "d ago"
+	case sec < 3600:
+		n := strconv.Itoa(sec / 60)
+		if zh {
+			return n + " 分钟前"
+		}
+		return n + "m ago"
+	case sec < 86400:
+		n := strconv.Itoa(sec / 3600)
+		if zh {
+			return n + " 小时前"
+		}
+		return n + "h ago"
+	case sec < 30*86400:
+		n := strconv.Itoa(sec / 86400)
+		if zh {
+			return n + " 天前"
+		}
+		return n + "d ago"
 	default:
-		return t.Format("2006-01-02")
+		return t.Format("2006/01/02")
 	}
 }

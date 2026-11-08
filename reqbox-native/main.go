@@ -44,6 +44,7 @@ type app struct {
 
 	sideTab    string // "requests" or "history"
 	hist       []store.HistoryEntry
+	histFilter string // the history tab's own search text
 	histList   ui.ListState
 	histSel    int
 	histOpenID string
