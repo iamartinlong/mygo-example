@@ -45,7 +45,9 @@ type app struct {
 	sideTab    string // "requests" or "history"
 	hist       []store.HistoryEntry
 	histFilter string // the history tab's own search text
-	histList   ui.ListState
+
+	histList ui.ListState
+
 	histSel    int
 	histOpenID string
 
@@ -57,6 +59,8 @@ type app struct {
 	envEditName string
 	envEditVars []envVarEdit
 	confirm     confirmState
+	prompt      promptState
+	curl        curlState
 	toasts      []toastMsg
 	runDlg      bool
 	langSel     string
@@ -89,6 +93,8 @@ func (a *app) view(c *ui.Context) {
 		ui.Split(c, &a.sidebar, func() { a.sidebarPane(c, p) }, func() { a.mainPane(c, p) }).Fill()
 		a.envDialog(c, p)
 		a.confirmDialog(c, p)
+		a.promptDialog(c, p)
+		a.curlDialog(c, p)
 		a.runSettingsDialog(c, p)
 	})
 }

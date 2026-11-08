@@ -131,7 +131,7 @@ mygo.NewWindow(mygo.WindowOptions{URL: "/"})
 
 每批完成 = 编译 + 真机运行 + 截图与 web 版同面板对照 + 提交。
 
-## 九、交接点（2026-11-08，批19–23 完成）
+## 九、交接点（2026-11-08，批19–24 完成）
 
 目标：把参数/请求头 KV 编辑器与发布面板按 web 基线重做（批15–18 已把请求框、标签条、Body/Auth 对齐）。**批19 已完成**：`reqbar.go` 的 `kvEditor` 重写为 tF 网格（eyebrow 表头 + border/60 发丝线、24/1fr/1.4fr/32 列 + gap 8、行高 32 radius 4、未启用整行 Opacity(0.45)、14px 复选框、28px mono 14 输入框无框/hover border/60/聚焦 border、hover 显 trash 14 删除钮 24×24、空态虚线 h-16 与非空小按钮 `mt-1.5` 双态、参数页脚 mono 10.5 按计数显隐、请求头页脚恒挂非 mono）；`publish.go` 的 `publishPane` 重写为 sF 堆叠（MaxWidth 512 gap 12：intro 12/1.625、开关卡=整卡 CheckboxBase radius 6 px-3 py-2.5 gap 10、路径名 iF（eyebrow/32px mono 14 输入 + outline sm 自动生成钮，暗色走 input token）、Mock URL 条 h-40 muted/50（globe 14 text-ok + mono 11 + ghost xs 复制钮）、覆盖卡 mt-1 radius 6 border-border/60 bg-muted/30）。明暗 × 参数/请求头/Body=form/发布 八张截图对照通过，截图仅本地 temp 不入库。
 
@@ -178,13 +178,29 @@ KV 编辑器：
 
 ### 剩余步骤（按序）
 
-批19–23 均已落地（批19：kvEditor/publishPane 重写+对照；批20：tab 面板滚动容器；批21：xl 并排布局；批22：响应面板按 web cF 重建；批23：历史标签页按 web Eh 重建）。留给下一批的已知差距：
+批19–24 均已落地（批19：kvEditor/publishPane 重写+对照；批20：tab 面板滚动容器；批21：xl 并排布局；批22：响应面板按 web cF 重建；批23：历史标签页按 web Eh 重建；批24：确认/Prompt/cURL/运行设置四个对话框按 shadcn 基线重建）。留给下一批的已知差距：
 
-- 响应面板的已知近似：长响应体的编辑器原生固定高（224/192px）内部滚动，web 是编辑器自增长、面板滚动；历史重放的请求头/请求体来自快照（替换前的草稿）而非 web history API 存的实际发送值；等待骨架无 pulse 动画（mygo 无对应动画）。
+- **环境管理器对话框未对照**（web 是 768 宽双栏大件：头部带新建钮、左列表 190px bg-muted/30、右编辑器）——原生 env.go 还是旧的 440 单栏，批25 首选。
+- 响应面板的已知近似：长响应体的编辑器原生固定高（224/192px）内部滚动，web 是编辑器自增长、面板滚动；历史重放的请求头/请求体来自快照（替换前的草稿）而非 web history API 存的实际发送值；等待骨架无 pulse 动画。
 - 键盘路径：web 删除钮有 `focus-visible:opacity-100` 兜底、输入有 ring，原生未做 focus-visible 显隐与 ring 绘制。
 - web 用 `crypto.randomUUID()`，原生用 8 字节随机 hex 作 KV id——格式不同但都是唯一串，库间互换无碍，别当缺陷改。
-- 五个对话框、侧栏环境面板仍未做逐像素对照（历史页批23 已扫）。
 
+### 批24 记录（对话框按 shadcn 基线重建）
+
+web 对话框内容基线：`sm:max-w-sm`=384（cURL 是 672），`rounded-xl`=12、`bg-popover`、`ring-1 ring-foreground/10`、p-4、部件间 gap-4；标题 text-sm 14 medium（Prompt 保持默认 16）；confirm 描述 11.5 leading-relaxed；页脚两态——confirm/prompt 是透明页脚（pt-1、右对齐、取消 outline sm + 确认 default/destructive sm），运行设置是 muted/50 带底页脚（border-t、rounded-b-xl、Done default sm）。原生新建 dialogs.go：`dialogShell`（含 Clip 让带底页脚贴圆角）、outline/default/destructive sm 按钮三件套、`promptState`/`curlState`。
+
+- **confirmDialog**：384、红 X 16 标题（web confirm 钩子默认 destructive）、11.5 描述、取消 outline sm + **删除请求 destructive**（bad/10 淡底 + bad 字——旧实现是实心红块）。
+- **promptDialog（新增功能）**：新建集合不再立即以默认名落库——`askPrompt` 走 web dh（eyebrow 字段 + 32px 输入 AutoFocus + hint 位），确认后才 `CreateCollection(trimmed)`；`prompt.newCollection.*` 五键全部接上。
+- **curlDialog（新增功能）**：cURL 行点击从「直接复制」改为开 web vF 的 672px 对话框（终端图标标题 + 11px 副标 + `runner.EncodeCurl` 只读编辑器（10px 顶距的边框框）+ 右对齐复制 outline sm，复制后 toast）；请求栏的复制钮仍直接复制 URL（web bar.copyUrl 语义，顺带修正旧实现复制的是 curl）。
+- **runSettingsDialog**：384 shell、标题 14/描述 11、grid gap-3 三行（超时输入 80×28 mono、跟随重定向、校验 TLS 双行标签），复选框换 14px `webCheckbox`，带底页脚 Done。
+- **验证**：四对话框真机截图全部按基线渲染；新建集合全流程（打开→输入「支付」→创建→侧栏出现集合+toast）通过；确认框取消路径通过。
+
+### 批24 踩坑
+
+- **ui.List 的可选行会吞掉行内控件的点击**（flagClickable 在行级，hit-test 先于行内元素）——历史行的 trash/重放点击在 List 里全部失效；改行点击=行选择（重放）、删除走右键菜单（web 的点 trash 删除无原生对应），列表套在 `Column(Grow(1))+List(Fill)` 里（批20 嵌套公式）钉住页脚。
+- **`ui.Scroll` 溢出内容会盖住同层后绘制的兄弟**——历史页 Scroll 版列表溢出绘制到页脚区（页脚其实每帧都在画，暗色下 mutedFg 文字对比低+采样点选在空白处，连误判三轮）；临时红底定位法（给怀疑元素涂 `ui.RGB(255,0,0)`）一次定位。最终历史页回退 ui.List。
+- **`gofmt -w .` 会把 i18n_table.go 的历史 CRLF 全量改写**（交接纪律明令别动）——已 `git checkout` 回滚；今后格式化只点名本批文件。
+- ui.Modal 按 Escape 即关——注入粘贴流程里的 ESC 会把刚打开的对话框关掉；`^v` 粘贴不受 IME 影响，对话框流程可省 ESC。
 ### 批23 记录（历史标签页按 web Eh 重建）
 
 web 历史页是独立片段：**自己的搜索行**（muted/50 底、12px 放大镜、`sidebar.searchHistory` 占位、右侧 trash 清空钮——清空走确认对话框）**替换**请求筛选行；列表行三行布局（状态 mono 10 粗体着色 `2xx ok/0 mutedFg/其余 bad`、方法、`ml-auto` 相对时间 `xh`（zh 双语硬编码：刚刚/N 分钟前/N 小时前/N 天前/日期）、名称 12px fg/85、`{duration} ms · {Sh(url)}`——Sh 是「路径或根主机、空为 no URL」）；删除是 hover 显隐 trash（无右键菜单）；空态是时钟图标（20px mutedFg/50）+ 居中文案。原生重建：`histFilter` 独立过滤词（`ListHistory(a.histFilter)`）、`sidebarPane` 里 history 分支**替换** filterRow（修掉了旧实现两行搜索叠排的 bug）、行 hover accent/50 + trash 显隐（批19 惯用法）、新转写 lucide history/search 图标。实测：13 条数据渲染（状态着色/中文相对时间/时长+路径）、hover 删钮、点击条目重放（选中请求 + 响应回放）、webview 空态基线对照（图标+文案同构）全过；displayURL 语义顺带对齐 Sh（根 URL 显主机、空显 no URL——请求行副标同步受益）。

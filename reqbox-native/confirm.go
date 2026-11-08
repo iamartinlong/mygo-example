@@ -18,31 +18,27 @@ func (a *app) askConfirm(title, desc, action string, fn func()) {
 	a.confirm = confirmState{open: true, title: title, desc: desc, action: action, fn: fn}
 }
 
+// confirmDialog is the web's fh: a 384px card, the title with a bad X
+// (the confirm hook defaults to destructive), the description at 11.5 on
+// relaxed lines, then cancel and the tinted destructive action.
 func (a *app) confirmDialog(c *ui.Context, p palette) {
 	ui.Modal(c, &a.confirm.open, func() {
-		ui.Column(c).Width(420).Padding(16, 20, 16, 20).Gap(10).
-			Background(p.card.color()).Radius(8).Children(func() {
-			ui.Text(c, a.confirm.title).Bold()
-			ui.Text(c, a.confirm.desc).FontSize(12).
-				TextColor(p.mutedFg.color())
-			ui.Row(c).Height(30).Gap(10).AlignItems(ui.Center).Children(func() {
-				ui.Row(c).Grow(1)
-				e := btnSecondary(c, p, tr("common.cancel"))
-				if e.Clicked() {
-					a.confirm.open = false
-				}
-				e = ui.Row(c).Height(28).Padding(0, 14, 0, 14).
-					AlignItems(ui.Center).Background(p.bad.color()).Children(func() {
-					ui.Text(c, a.confirm.action).FontSize(12).SingleLine().
-						TextColor(ui.Oklch(1, 0, 0))
-				})
-				if e.Clicked() {
-					a.confirm.open = false
-					if a.confirm.fn != nil {
-						a.confirm.fn()
-					}
-				}
+		dialogShell(c, p, 384, func() {
+			ui.Column(c).FillWidth().Gap(8).Children(func() {
+				dialogTitle(c, p, a.confirm.title, true)
+				ui.Text(c, a.confirm.desc).FontSize(11.5).LineHeight(1.625).
+					TextColor(p.mutedFg.color())
 			})
-		})
+			ui.Row(c).FillWidth().Padding(4, 0, 0, 0).Gap(8).Justify(ui.End).
+				Children(func() {
+					btnOutlineSm(c, p, tr("common.cancel"), func() { a.confirm.open = false })
+					btnDestructiveSm(c, p, a.confirm.action, func() {
+						a.confirm.open = false
+						if a.confirm.fn != nil {
+							a.confirm.fn()
+						}
+					})
+				})
+		}, nil)
 	})
 }

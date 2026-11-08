@@ -274,7 +274,8 @@ func (a *app) requestBar(c *ui.Context, p palette) {
 						ui.Icon(c, iconCopy).Size(14, 14).TextColor(p.mutedFg.color())
 					})
 				if e.Clicked() {
-					mygo.Clipboard.WriteText(curlFor(a.edit.method, a.edit.url, a.edit.params))
+					// The web's bar.copyUrl copies the URL itself.
+					mygo.Clipboard.WriteText(a.edit.url)
 				}
 				a.sendBtn(c, p)
 			})
@@ -389,7 +390,8 @@ func (a *app) curlRow(c *ui.Context, p palette) {
 				SingleLine().TextColor(p.mutedFg.color())
 		})
 		if e.Clicked() {
-			mygo.Clipboard.WriteText(curlFor(a.edit.method, a.edit.url, a.edit.params))
+			// The web opens its curl dialog rather than copying outright.
+			a.openCurlDialog()
 		}
 		del := ui.Row(c).Height(24).Padding(0, 8, 0, 8).AlignItems(ui.Center)
 		del.Children(func() {
@@ -724,13 +726,4 @@ func fullURL(raw string, params []store.KV) string {
 		sep = "&"
 	}
 	return raw + sep + q.Encode()
-}
-
-// curlFor renders the request as a curl command, as the web cURL button copies.
-func curlFor(method, raw string, params []store.KV) string {
-	full := fullURL(raw, params)
-	if full == "" {
-		full = "http://"
-	}
-	return fmt.Sprintf("curl -X %s '%s'", method, full)
 }

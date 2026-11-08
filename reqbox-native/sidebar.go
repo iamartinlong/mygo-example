@@ -101,8 +101,9 @@ func (a *app) applyPending() {
 		a.st.CreateRequest(store.Request{Name: tr("sidebar.newRequest"), Method: "GET"})
 		a.toastOK(tr("toast.requestCreated"))
 	case p.newCollection:
-		a.st.CreateCollection(tr("sidebar.newCollection"))
-		a.toastOK(tr("toast.collectionCreated"))
+		// The web asks for the name in its prompt dialog rather than
+		// creating with a default.
+		a.promptCollection()
 	case p.deleteReq != "":
 		a.st.DeleteRequest(p.deleteReq)
 		if a.selectedID == p.deleteReq {
@@ -226,8 +227,14 @@ func (a *app) historyPane(c *ui.Context, p palette) {
 			})
 		return
 	}
+	// The rows go back on a ui.List inside a growing column — the
+	// batch-20 nesting, which keeps the footer pinned without the list
+	// bleeding past it. The web's click-the-trash delete becomes a row
+	// context menu here — ui.List's selectable rows consume the clicks of
+	// the controls inside them (batch 23), so only the row itself and its
+	// menu receive them.
 	a.histList.Selected = &a.histSel
-	ui.Column(c).Grow(1).Padding(0, 8, 12, 8).Children(func() {
+	ui.Column(c).Grow(1).FillWidth().Children(func() {
 		e := ui.List(c, &a.histList, len(a.hist),
 			func(i int) { a.histRowView(c, p, i) }).Fill()
 		e.ItemKey(func(i int) any { return a.hist[i].ID })
@@ -239,8 +246,11 @@ func (a *app) historyPane(c *ui.Context, p palette) {
 }
 
 // histRowView is the web's history row: status, method and age on the
-// first line, the name, then the duration and the request path, with a
-// trash the row's hover reveals.
+// first line, the name, then the duration and the request path, with the
+// trash icon the web's hover reveals drawn in. Deleting goes through the
+// row's context menu — ui.List's selectable rows consume the clicks of
+// controls inside them (batch 23), so the web's click-the-trash has no
+// native counterpart on the list.
 func (a *app) histRowView(c *ui.Context, p palette, i int) {
 	h := a.hist[i]
 	row := ui.Row(c).Fill().Padding(6, 4, 6, 8).Gap(8).AlignItems(ui.Start).
@@ -288,7 +298,8 @@ func (a *app) histRowView(c *ui.Context, p palette, i int) {
 				ui.Icon(c, iconTrash).Size(12, 12).TextColor(p.mutedFg.color())
 			}
 		})
-		if del.Clicked() {
+	}).ContextMenu(func(m *ui.Menu) {
+		if m.Item(tr("sidebar.deleteHistoryEntry")).Chosen() {
 			a.pending.deleteHist = h.ID
 		}
 	})

@@ -16,14 +16,14 @@ func (v lch) color() ui.Color {
 // .dark variants value-for-value, so the native UI matches it exactly.
 // Method-band colors are the light-theme --m-* set.
 type palette struct {
-	background, card, secondary, accent, border lch
-	foreground, mutedFg                         lch
-	primary, primaryFg                          lch
-	ring, ok, warn, bad                         lch
-	panel, rail, chrome, hairline, input, muted lch
-	secondaryFg, accentFg                       lch
-	methods                                     methodColors
-	isDark                                      bool
+	background, card, secondary, accent, border, popover lch
+	foreground, mutedFg                                  lch
+	primary, primaryFg                                   lch
+	ring, ok, warn, bad                                  lch
+	panel, rail, chrome, hairline, input, muted          lch
+	secondaryFg, accentFg                                lch
+	methods                                              methodColors
+	isDark                                               bool
 }
 
 type methodColors struct {
@@ -49,7 +49,7 @@ func (p palette) method(m string) lch {
 
 // web :root — light (blueprint paper)
 var light = palette{
-	background: lch{98.5, .003, 240}, card: lch{100, 0, 0},
+	background: lch{98.5, .003, 240}, card: lch{100, 0, 0}, popover: lch{100, 0, 0},
 	secondary: lch{95.5, .005, 240}, accent: lch{94.5, .008, 240},
 	border:     lch{90, .006, 240},
 	foreground: lch{22, .012, 250}, mutedFg: lch{53, .012, 250},
@@ -71,7 +71,7 @@ var light = palette{
 
 // web .dark
 var dark = palette{
-	background: lch{16.5, .008, 250}, card: lch{20, .009, 250},
+	background: lch{16.5, .008, 250}, card: lch{20, .009, 250}, popover: lch{21.5, .009, 250},
 	secondary: lch{25, .009, 250}, accent: lch{27, .01, 250},
 	border:     lch{29, .009, 250},
 	foreground: lch{93, .004, 240}, mutedFg: lch{66, .012, 245},

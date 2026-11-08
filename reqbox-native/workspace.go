@@ -122,42 +122,51 @@ func (a *app) doImport(snap store.Export) {
 	a.toastOK(tr("toast.imported", "count", len(snap.Requests)))
 }
 
-// runSettingsDialog edits the run defaults live, as the web's dialog:
+// runSettingsDialog edits the run defaults live, as the web's yF dialog:
 // changes apply at once, Done only closes. They persist in the settings
 // table, the desktop counterpart of the web's localStorage.
 func (a *app) runSettingsDialog(c *ui.Context, p palette) {
 	ui.Modal(c, &a.runDlg, func() {
-		ui.Column(c).Width(380).Padding(16, 20, 16, 20).Gap(12).
-			Background(p.card.color()).Radius(8).Children(func() {
-			ui.Column(c).Gap(3).Children(func() {
-				ui.Text(c, tr("run.title")).Bold()
+		dialogShell(c, p, 384, func() {
+			ui.Column(c).FillWidth().Gap(8).Children(func() {
+				ui.Text(c, tr("run.title")).FontSize(14).FontWeight(500)
 				ui.Text(c, tr("run.desc")).FontSize(11).
 					TextColor(p.mutedFg.color())
 			})
-			ui.Row(c).Height(30).Gap(8).AlignItems(ui.Center).Children(func() {
-				ui.Text(c, tr("run.timeout")).FontSize(12).Grow(1)
-				ui.TextInput(c, &a.run.timeout).Width(72).Height(28).FontSize(12)
-				ui.Text(c, tr("run.seconds")).FontSize(11).
-					TextColor(p.mutedFg.color())
-			})
-			ui.Row(c).Height(26).AlignItems(ui.Center).Children(func() {
-				ui.Checkbox(c, &a.run.follow, tr("run.followRedirects"))
-			})
-			ui.Row(c).Gap(8).AlignItems(ui.Start).Children(func() {
-				ui.Column(c).Grow(1).Gap(2).Children(func() {
-					ui.Text(c, tr("run.verifyTls")).FontSize(12)
-					ui.Text(c, tr("run.verifyTlsHint")).FontSize(10.5).
+			ui.Column(c).FillWidth().Gap(12).Children(func() {
+				ui.Row(c).FillWidth().Gap(12).AlignItems(ui.Center).Children(func() {
+					ui.Text(c, tr("run.timeout")).FontSize(12).Grow(1)
+					ui.TextInput(c, &a.run.timeout).Width(80).Height(28).
+						FontSize(12).Font("JetBrains Mono")
+					ui.Text(c, tr("run.seconds")).FontSize(11).
 						TextColor(p.mutedFg.color())
 				})
-				ui.Checkbox(c, &a.run.verify, "")
+				ui.Row(c).FillWidth().Gap(12).AlignItems(ui.Center).Children(func() {
+					ui.Text(c, tr("run.followRedirects")).FontSize(12).Grow(1)
+					webCheckbox(c, p, &a.run.follow)
+				})
+				ui.Row(c).FillWidth().Gap(12).AlignItems(ui.Start).Children(func() {
+					ui.Column(c).Grow(1).Gap(2).Children(func() {
+						ui.Text(c, tr("run.verifyTls")).FontSize(12)
+						ui.Text(c, tr("run.verifyTlsHint")).FontSize(10.5).
+							TextColor(p.mutedFg.color())
+					})
+					ui.Row(c).Padding(2, 0, 0, 0).Children(func() {
+						webCheckbox(c, p, &a.run.verify)
+					})
+				})
 			})
-			ui.Row(c).Height(30).AlignItems(ui.Center).Children(func() {
-				ui.Row(c).Grow(1)
-				e := btnPrimary(c, p, tr("common.done"))
-				if e.Clicked() {
+		}, func() {
+			// The web's band footer: muted ground, hairline top, Done at
+			// the right.
+			ui.Row(c).FillWidth().Padding(16, 16, 16, 16).Gap(8).
+				Justify(ui.End).Background(p.muted.color().Alpha(0.5)).
+				BorderWidth(1, 0, 0, 0).BorderColor(p.border.color()).
+				AlignItems(ui.Center).Children(func() {
+				btnPrimarySm(c, p, tr("common.done"), func() {
 					a.runDlg = false
 					a.saveRunSettings()
-				}
+				})
 			})
 		})
 	})
