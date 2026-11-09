@@ -191,6 +191,17 @@ KV 编辑器：
 - 等待骨架无 pulse 动画（mygo 有动画能力，可按需实现）。
 - web 用 `crypto.randomUUID()`，原生用 8 字节随机 hex 作 KV id——格式不同但都是唯一串，库间互换无碍，别当缺陷改。
 
+### 批32 记录（发版 reqbox-native-v0.1.1）
+
+- **版本**：mygo.json 0.1.0→0.1.1 + 新增 `reqbox-native/CHANGELOG.md`（批19–31 内容资产、键盘路径、DWM 边框、打包）；提交 `6dfe735`，`git push` 后 main 与远端齐平。
+- **签名构建**：`Reqbox Native.exe` 21.6MB（VersionInfo 0.1.1）、安装器 6.9MB、签名 tar.gz 9.0MB、`update-windows-amd64.json` 2KB（嵌入 CHANGELOG 摘要）+ install.ps1 + SHA256SUMS。
+- **发布（REST API）**：release id 439248014、tag `reqbox-native-v0.1.1`、**draft 建立 → 5 个资产上传（manifest 最后）→ PATCH 发布**、`make_latest: false`；复核仓库 latest 仍为 todo 的 `v0.3.1` ✓，tar.gz 与 manifest 的下载 URL 均 200 ✓。首个发布版无 delta 属正常。
+- **E2E 受阻（如实记录）**：GitHub 匿名 API 限额（60/h，本 IP 已被构建/测试耗尽，重置点 23:52）导致安装版 0.1.0 的 10s 自动检查失败；插件的失败只在内存记录（`updater.json` 保持 `{}`，不写 failed 时间）。已安排 23:53 的一次性自动化验证（启动安装版→自动检查→弹更新窗→安装→核对 0.1.1）。本地自建 feed 的方案试过但 mygo 构建期强制 `updates.url` 为 https（运行期才对 loopback 放行），未采用。
+
+**踩坑**：
+- `updater.json` 为 `{}` 不代表"没检查"——检查失败不落盘、成功才写 `LastCheck`；判断检查是否成功看该字段。
+- release 的 `target_commitish` 要给完整 commit hash（截断的短 hash 会 422）。
+- 中文/长 release notes 走 UTF-8 文件 + `node -e` 生成 JSON + `--data-binary @file`，避开命令行编码坑（沿用既有教训）。
 ### 批31 记录（暗色窗框白边修复）
 
 **问题**：暗色模式下窗口左/右/底各有一条 1px 纯白线（顶部没有）。取样确认：暗色下左 x=7、右 x=1272、底 y=812 均为 R255 纯白，顶部全为内容色。
