@@ -131,7 +131,7 @@ mygo.NewWindow(mygo.WindowOptions{URL: "/"})
 
 每批完成 = 编译 + 真机运行 + 截图与 web 版同面板对照 + 提交。
 
-## 九、交接点（2026-11-08，批19–24 完成）
+## 九、交接点（2026-11-09，批19–25 完成）
 
 目标：把参数/请求头 KV 编辑器与发布面板按 web 基线重做（批15–18 已把请求框、标签条、Body/Auth 对齐）。**批19 已完成**：`reqbar.go` 的 `kvEditor` 重写为 tF 网格（eyebrow 表头 + border/60 发丝线、24/1fr/1.4fr/32 列 + gap 8、行高 32 radius 4、未启用整行 Opacity(0.45)、14px 复选框、28px mono 14 输入框无框/hover border/60/聚焦 border、hover 显 trash 14 删除钮 24×24、空态虚线 h-16 与非空小按钮 `mt-1.5` 双态、参数页脚 mono 10.5 按计数显隐、请求头页脚恒挂非 mono）；`publish.go` 的 `publishPane` 重写为 sF 堆叠（MaxWidth 512 gap 12：intro 12/1.625、开关卡=整卡 CheckboxBase radius 6 px-3 py-2.5 gap 10、路径名 iF（eyebrow/32px mono 14 输入 + outline sm 自动生成钮，暗色走 input token）、Mock URL 条 h-40 muted/50（globe 14 text-ok + mono 11 + ghost xs 复制钮）、覆盖卡 mt-1 radius 6 border-border/60 bg-muted/30）。明暗 × 参数/请求头/Body=form/发布 八张截图对照通过，截图仅本地 temp 不入库。
 
@@ -178,12 +178,21 @@ KV 编辑器：
 
 ### 剩余步骤（按序）
 
-批19–24 均已落地（批19：kvEditor/publishPane 重写+对照；批20：tab 面板滚动容器；批21：xl 并排布局；批22：响应面板按 web cF 重建；批23：历史标签页按 web Eh 重建；批24：确认/Prompt/cURL/运行设置四个对话框按 shadcn 基线重建）。留给下一批的已知差距：
+批19–25 均已落地（批19：kvEditor/publishPane 重写+对照；批20：tab 面板滚动容器；批21：xl 并排布局；批22：响应面板按 web cF 重建；批23：历史标签页按 web Eh 重建；批24：确认/Prompt/cURL/运行设置四对话框按 shadcn 基线重建；批25：环境管理器按 web _F 重建为 768 双栏）。留给下一批的已知差距：
 
-- **环境管理器对话框未对照**（web 是 768 宽双栏大件：头部带新建钮、左列表 190px bg-muted/30、右编辑器）——原生 env.go 还是旧的 440 单栏，批25 首选。
-- 响应面板的已知近似：长响应体的编辑器原生固定高（224/192px）内部滚动，web 是编辑器自增长、面板滚动；历史重放的请求头/请求体来自快照（替换前的草稿）而非 web history API 存的实际发送值；等待骨架无 pulse 动画。
+- **保存按钮偶发不响应（未定位）**：环境管理器的保存钮在注入点击下约 1/4 才触发（日志证实按钮每帧构建、Clicked 路径与已验证的 confirm/prompt 完全相同、`CreateEnvironment` API 直调正常）——疑似注入时序伪影，**真实鼠标待用户复核**。
+- 响应面板的已知近似：长响应体的编辑器原生固定高（224/192px）内部滚动，web 是编辑器自增长、面板滚动；历史重放的请求头/请求体来自快照（替换前的草稿）而非 web history API 存的实际发送值；等待骨架无 pulse 动画（mygo 无对应动画）。
 - 键盘路径：web 删除钮有 `focus-visible:opacity-100` 兜底、输入有 ring，原生未做 focus-visible 显隐与 ring 绘制。
 - web 用 `crypto.randomUUID()`，原生用 8 字节随机 hex 作 KV id——格式不同但都是唯一串，库间互换无碍，别当缺陷改。
+
+### 批25 记录（环境管理器按 web _F 重建）
+
+web _F：`gap-0 p-0 sm:max-w-3xl`=768 无内距卡片：头部带（环境 14 medium + 副标 11 mutedFg + ml-auto 新建 outline xs）+ `h-[420px] grid-cols-[190px_1fr]` 双栏 + 带底页脚（`env.footer` 10.5 + Done outline sm）。原生 env.go 全量重建：
+
+- **左栏 190px**（bg-muted/30、border-r、p-2）：环境按钮 rounded-md px-2 py-1.5 text-12——选中 paper 底、非选中 mutedFg hover accent/60；active 环境挂 `mono rounded bg-ok/15 px-1 text-[9px] text-ok` 的「当前」badge；空态 `env.noEnvironments`。
+- **右编辑器**：名称行（border-b px-3 py-2：名称输入 220×28 12px medium placeholder、非 active 时 `env.useThis` outline xs（激活+toast）、右端 trash ghost icon-xs（确认框走 deleteEnvironment.*，删 active 用 descActive 文案）+ 保存 default xs（save 图标 12 + common.save））；变量滚动区 p-3：行 grid `24/1fr/1.4fr/48`——14px webCheckbox、key/value mono 11.5 28 高 input-token 边框输入（value 按 secret 走密码态）、trash ghost 12px；空态 py-6 居中；`+ 添加变量` ghost xs mt-2。
+- **行为对齐**：打开时选择 fallback（上次编辑→active→首个，`openEnvMgr`）；`+新建` 只把编辑器置为未保存态（名称=env.newEnvironment、一行空变量）不落库；保存=Create（新）/Update（旧）且对话框保持开（web 同）；删除走确认框后回到空编辑态。
+- **验证**：对话框全结构真机渲染 ✓、选择 fallback（自动选中 dev）✓、`+新建` 进未保存编辑态 ✓、保存 Clicked+toast 出现过 ✓、`CreateEnvironment` API 直调 ✓；保存按钮注入点击偶发不响应见「剩余步骤」首条。
 
 ### 批24 记录（对话框按 shadcn 基线重建）
 
