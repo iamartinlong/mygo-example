@@ -7,6 +7,8 @@ package main
 import (
 	"log"
 	"path/filepath"
+	"syscall"
+	"unsafe"
 
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/plugins/updater"
@@ -206,7 +208,10 @@ func (a *app) themeBtn(c *ui.Context, p palette) {
 }
 
 // applyButtonsTheme repaints the floating window controls for the variant
-// they sit on: ThemeDark draws light glyphs. Windows-only; inert elsewhere.
+// they sit on: ThemeDark draws light glyphs. It also tells DWM the window
+// is dark, so its 1px frame border — drawn on the left, right and bottom
+// but not the top — follows: on a light desktop that line is white and
+// shows around this dark app. Windows-only; inert elsewhere.
 func (a *app) applyButtonsTheme() {
 	if a.win == nil {
 		return
@@ -215,6 +220,32 @@ func (a *app) applyButtonsTheme() {
 		a.win.SetWindowButtonsTheme(mygo.ThemeDark)
 	} else {
 		a.win.SetWindowButtonsTheme(mygo.ThemeLight)
+	}
+	dwmDarkFrame(a.win.NativeHandle(), a.dark)
+}
+
+// dwmDarkFrame sets DWMWA_USE_IMMERSIVE_DARK_MODE (attribute 20 on
+// Windows 10 20H1+, 19 on older builds), which switches the DWM-drawn
+// window border from white to dark. A frame change re-applies the
+// non-client frame, so DWM repaints the border on a running window.
+func dwmDarkFrame(hwnd uintptr, dark bool) {
+	if hwnd == 0 {
+		return
+	}
+	proc := syscall.NewLazyDLL("dwmapi.dll").NewProc("DwmSetWindowAttribute")
+	v := int32(0)
+	if dark {
+		v = 1
+	}
+	for _, attr := range []uintptr{20, 19} {
+		if hr, _, _ := proc.Call(hwnd, attr, uintptr(unsafe.Pointer(&v)), 4); hr == 0 {
+			user32 := syscall.NewLazyDLL("user32.dll")
+			setPos := user32.NewProc("SetWindowPos")
+			const swpFramechanged, swpNosize, swpNomove = 0x0020, 0x0001, 0x0002
+			_, _, _ = setPos.Call(hwnd, 0, 0, 0, 0, 0,
+				swpFramechanged|swpNosize|swpNomove)
+			return
+		}
 	}
 }
 

@@ -191,6 +191,17 @@ KV 编辑器：
 - 等待骨架无 pulse 动画（mygo 有动画能力，可按需实现）。
 - web 用 `crypto.randomUUID()`，原生用 8 字节随机 hex 作 KV id——格式不同但都是唯一串，库间互换无碍，别当缺陷改。
 
+### 批31 记录（暗色窗框白边修复）
+
+**问题**：暗色模式下窗口左/右/底各有一条 1px 纯白线（顶部没有）。取样确认：暗色下左 x=7、右 x=1272、底 y=812 均为 R255 纯白，顶部全为内容色。
+
+**根因**：这是 **DWM 画的非客户区窗口边框**（1px，跟随系统浅色主题），与 app 的暗色 UI 无关；TitleBarHidden 让顶部不画此线，左/右/底保留。
+
+**修复**：`dwmDarkFrame`——`DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, app 是否为暗色)`（attribute 20，旧版 Windows 回退 19），在 `applyButtonsTheme` 里随主题调用（启动与切换都走它）；HWND 用 mygo v0.7.4 公开的 `Window.NativeHandle()`。
+
+**验证（像素取样）**：暗色启动边框 R255→R53 深灰 ✓；亮色启动边框保持 R255 白（与亮 UI 协调）✓。
+
+**已知限制**：运行中切换主题时 DWM **不重绘**边框色（连 SWP_FRAMECHANGED 也无效），下次启动生效——为免闪烁未用 hide/show 强刷；日常使用（设定后重启/启动即按存储主题）无感。
 ### 批30 记录（打包与更新链）
 
 按路线 A（`reqbox-desktop`）验证过的 mygo 打包流程，给 `reqbox-native` 补上分发能力：
