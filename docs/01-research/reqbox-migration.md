@@ -187,6 +187,13 @@ KV 编辑器：
 - 键盘路径：web 删除钮有 `focus-visible:opacity-100` 兜底、输入有 ring，原生未做 focus-visible 显隐与 ring 绘制。
 - web 用 `crypto.randomUUID()`，原生用 8 字节随机 hex 作 KV id——格式不同但都是唯一串，库间互换无碍，别当缺陷改。
 
+### 批27 记录（响应面板编辑器自增长 + $P 边框框）
+
+web 的响应编辑器是 `$P`：`overflow-hidden rounded-md border border-border/70 bg-background/40` 的边框框，内容 10px 顶距，`minHeight` 预览 14rem、请求体/原始 12rem，且随内容**自增长、由面板滚动**（不是编辑器内部滚动）。原生此前是固定高 224/192 的裸编辑器内部滚动。
+
+- 新增 `respEditor`：边框框（radius 6、border/70、bg/40、10px 顶距、8px 底）+ 高度 = `行数 × 12.5px × 1.65 + 18`（预览 min 224、其余 192；行数封顶 2000 防超大响应撑爆布局）。
+- 三处替换：预览、请求体（替换后）、原始（Response tab）。
+- 验证：临时 Go server（127.0.0.1:5199/big 返回 42 行 JSON）→ 原生请求成功（200 · 1.3 KB）→ 预览编辑器自增长、面板滚轮滚到 42/43 行末尾；响应 tab 同框同增长。运行条与状态行位置不变。
 ### 批26 记录（环境管理器保存钮修复）
 
 批25 遗留的「保存按钮偶发不响应」实为两个真实 bug 叠加（交接误判为注入伪影，已更正）：

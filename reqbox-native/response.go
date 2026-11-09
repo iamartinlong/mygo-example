@@ -592,6 +592,29 @@ func respErrBox(c *ui.Context, p palette, err, hint string) {
 		})
 }
 
+// respEditor draws a read-only editor in the web's $P frame: a hairline
+// bordered box on a tinted ground with 10px of lead above the text and 8px
+// below it, tall enough for every line at the editor's 12.5px/1.65 leading
+// and never shorter than minH. The web editor grows past its min height and
+// the panel scrolls; the line count is capped so an enormous body stays a
+// scroll rather than a layout cost.
+func respEditor(c *ui.Context, p palette, st *editor.State, text string, minH float32) {
+	lines := float32(strings.Count(text, "\n") + 1)
+	if lines > 2000 {
+		lines = 2000
+	}
+	h := lines*12.5*1.65 + 10 + 8
+	if h < minH {
+		h = minH
+	}
+	ui.Column(c).FillWidth().Height(h).Radius(6).
+		Border(1, p.border.color().Alpha(0.7)).
+		Background(p.background.color().Alpha(0.4)).Clip().Children(func() {
+		ui.Row(c).Height(10)
+		editor.View(c, st).Fill()
+	})
+}
+
 // respPreviewTab shows the body as the web's preview does: an error card,
 // an image, a binary note, or the highlighted editor.
 func (a *app) respPreviewTab(c *ui.Context, p palette, r *runner.Response) {
@@ -607,7 +630,7 @@ func (a *app) respPreviewTab(c *ui.Context, p palette, r *runner.Response) {
 		a.respBinaryNote(c, p, r)
 	default:
 		if a.run.bodySt != nil {
-			editor.View(c, a.run.bodySt).FillWidth().Height(224)
+			respEditor(c, p, a.run.bodySt, r.BodyText, 224)
 		}
 	}
 }
@@ -910,7 +933,7 @@ func (a *app) respRequestTab(c *ui.Context, p palette, r *runner.Response) {
 				TextColor(p.mutedFg.color())
 		})
 	if a.run.reqSt != nil {
-		editor.View(c, a.run.reqSt).FillWidth().Height(192)
+		respEditor(c, p, a.run.reqSt, r.RequestBody, 192)
 	}
 }
 
@@ -936,6 +959,6 @@ func (a *app) respRawTab(c *ui.Context, p palette, r *runner.Response) {
 		})
 	}
 	if a.run.rawSt != nil {
-		editor.View(c, a.run.rawSt).FillWidth().Height(192)
+		respEditor(c, p, a.run.rawSt, r.BodyText, 192)
 	}
 }
