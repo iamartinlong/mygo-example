@@ -227,6 +227,8 @@ func (a *app) envEditPane(c *ui.Context, p palette) {
 				a.btnUseThisEnv(c, p)
 			}
 			ui.Row(c).Grow(1)
+			// Only an existing environment has something to delete; the
+			// save button always shows, as on the web.
 			if a.envEditID != "" {
 				del := ui.Row(c).Width(24).Height(24).Radius(6).
 					AlignItems(ui.Center).Center()
@@ -247,8 +249,8 @@ func (a *app) envEditPane(c *ui.Context, p palette) {
 							a.deleteEnv(id)
 						})
 				}
-				btnDefaultXsSave(c, p, func() { a.saveEnv() })
 			}
+			btnDefaultXsSave(c, p, func() { a.saveEnv() })
 		})
 		ui.Scroll(c).FillHeight().FillWidth().Children(func() {
 			ui.Column(c).FillWidth().Padding(12, 12, 12, 12).Gap(4).Children(func() {
@@ -344,7 +346,7 @@ func (a *app) btnUseThisEnv(c *ui.Context, p palette) {
 // btnDefaultXsSave is the web's default xs button with the save glyph.
 func btnDefaultXsSave(c *ui.Context, p palette, fn func()) {
 	e := ui.Row(c).Height(24).Padding(0, 8, 0, 8).Gap(4).Radius(6).
-		AlignItems(ui.Center)
+		AlignItems(ui.Center).Background(p.primary.color())
 	if e.Hovered() {
 		e.Background(p.primary.color().Alpha(0.8))
 	}
@@ -431,7 +433,11 @@ func (a *app) deleteEnv(id string) {
 	if a.activeEnv == id {
 		a.setActiveEnv("")
 	}
+	// The web empties the editor after a delete, as when it opens with no
+	// environment selected.
 	a.envEditID = ""
+	a.envEditName = ""
+	a.envEditVars = nil
 	a.loadEnvs()
 	a.toastOK(tr("toast.environmentDeleted"))
 }

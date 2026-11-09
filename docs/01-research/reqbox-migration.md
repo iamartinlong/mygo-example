@@ -182,11 +182,23 @@ KV 编辑器：
 
 批19–25 均已落地（批19：kvEditor/publishPane 重写+对照；批20：tab 面板滚动容器；批21：xl 并排布局；批22：响应面板按 web cF 重建；批23：历史标签页按 web Eh 重建；批24：确认/Prompt/cURL/运行设置四对话框按 shadcn 基线重建；批25：环境管理器按 web _F 重建为 768 双栏）。留给下一批的已知差距：
 
-- **保存按钮偶发不响应（未定位）**：环境管理器的保存钮在注入点击下约 1/4 才触发（日志证实按钮每帧构建、Clicked 路径与已验证的 confirm/prompt 完全相同、`CreateEnvironment` API 直调正常）——疑似注入时序伪影，**真实鼠标待用户复核**。
+- ~~保存按钮偶发不响应~~ **批26 已定位并修复**：真实 bug——新环境态 Save 被 `envEditID != ""` 条件块藏掉（web 无条件渲染 Save，仅删除依 env 存在），叠加调试期红底 sed 误删按钮的 primary 背景导致 Save 隐形；两处已修，新建→保存→列表出现→删除→编辑器清空全链真机闭环。
 - 响应面板的已知近似：长响应体的编辑器原生固定高（224/192px）内部滚动，web 是编辑器自增长、面板滚动；历史重放的请求头/请求体来自快照（替换前的草稿）而非 web history API 存的实际发送值；等待骨架无 pulse 动画（mygo 无对应动画）。
 - 键盘路径：web 删除钮有 `focus-visible:opacity-100` 兜底、输入有 ring，原生未做 focus-visible 显隐与 ring 绘制。
 - web 用 `crypto.randomUUID()`，原生用 8 字节随机 hex 作 KV id——格式不同但都是唯一串，库间互换无碍，别当缺陷改。
 
+### 批26 记录（环境管理器保存钮修复）
+
+批25 遗留的「保存按钮偶发不响应」实为两个真实 bug 叠加（交接误判为注入伪影，已更正）：
+
+1. **新环境态根本没有 Save 按钮**：批25 把删除钮与 Save 一起放进 `if a.envEditID != ""` 条件块——新建（envEditID="")时两者都不渲染。web 的 `_F` 只在删除上判 `y&&`，Save 无条件渲染。修复：Save 移出条件块，删除保持仅限已有环境。
+2. **Save 隐形**：调试「偶发不响应」时用红底定位法临时替换 `.Background(p.primary.color())`，事后 sed 反向删除时把整个 Background 调用删掉——按钮有 `primaryFg` 深色字但无 primary 底，暗色主题下几乎不可见。修复：恢复 `.Background(p.primary.color())`。
+
+顺带对齐一处 web 行为：删除环境后编辑器应清空（web `l(null)` + 空名称/空变量），批25 只清了 envEditID 留下名称与变量残留——`deleteEnv` 现同时清空 envEditName/envEditVars。
+
+真机闭环：打开管理器（dev 选中）→ +新建（Save 可见）→ 输入 staging → 保存（toast 环境已创建、列表出现 staging、名称行出现「启用」）→ trash 删除（确认框「删除"staging"?」）→ 删除环境（toast 环境已删除、列表回 dev、编辑器清空）→ 选中 dev 点保存（toast 环境已保存）。全程通过。
+
+**踩坑**：临时「红底定位法」收尾时不能简单反向 sed——`.Background(ui.RGB(255,0,0))` 的删除会连原调用一起铲掉；改色前先备份原行文本，还原时整段替换。
 ### 批25 记录（环境管理器按 web _F 重建）
 
 web _F：`gap-0 p-0 sm:max-w-3xl`=768 无内距卡片：头部带（环境 14 medium + 副标 11 mutedFg + ml-auto 新建 outline xs）+ `h-[420px] grid-cols-[190px_1fr]` 双栏 + 带底页脚（`env.footer` 10.5 + Done outline sm）。原生 env.go 全量重建：
