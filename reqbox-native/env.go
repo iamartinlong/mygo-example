@@ -220,9 +220,10 @@ func (a *app) envEditPane(c *ui.Context, p palette) {
 	ui.Column(c).Grow(1).FillHeight().Children(func() {
 		ui.Row(c).FillWidth().Padding(8, 12, 8, 12).Gap(8).AlignItems(ui.Center).
 			BorderWidth(0, 0, 1, 0).BorderColor(p.border.color()).Children(func() {
-			ui.TextInputBase(c, &a.envEditName).Width(220).Height(28).Radius(8).
+			nameIn := ui.TextInputBase(c, &a.envEditName).Width(220).Height(28).Radius(8).
 				FontSize(12).FontWeight(500).Padding(0, 10, 0, 10).
 				Border(1, p.input.color()).Placeholder(tr("env.namePlaceholder"))
+			focusedRing(p, nameIn)
 			if a.envEditID != "" && a.envEditID != a.activeEnv {
 				a.btnUseThisEnv(c, p)
 			}
@@ -294,10 +295,11 @@ func (a *app) envVarRow(c *ui.Context, p palette, i int) {
 		ui.Row(c).Width(24).AlignItems(ui.Center).Children(func() {
 			webCheckbox(c, p, &v.enabled)
 		})
-		ui.TextInputBase(c, &v.key).Grow(1).Basis(0).MinWidth(0).
+		keyIn := ui.TextInputBase(c, &v.key).Grow(1).Basis(0).MinWidth(0).
 			Height(28).Radius(8).FontSize(11.5).Font("JetBrains Mono").
 			Padding(0, 10, 0, 10).Border(1, p.input.color()).
 			Placeholder("baseUrl")
+		focusedRing(p, keyIn)
 		vin := ui.TextInputBase(c, &v.value).Grow(1.4).Basis(0).MinWidth(0).
 			Height(28).Radius(8).FontSize(11.5).Font("JetBrains Mono").
 			Padding(0, 10, 0, 10).Border(1, p.input.color()).
@@ -305,6 +307,7 @@ func (a *app) envVarRow(c *ui.Context, p palette, i int) {
 		if v.secret {
 			vin = vin.Password()
 		}
+		focusedRing(p, vin)
 		rm := ui.Row(c).Width(24).Height(24).Radius(6).
 			AlignItems(ui.Center).Center()
 		if rm.Hovered() {

@@ -593,15 +593,16 @@ func (a *app) kvRow(c *ui.Context, p palette, ph [2]string, kvs *[]store.KV, i i
 		a.kvInput(c, p, &kv.Key, ph[0], 1)
 		a.kvInput(c, p, &kv.Value, ph[1], 1.4)
 		ui.Row(c).Width(32).AlignItems(ui.Center).Children(func() {
-			del := ui.Row(c).Width(24).Height(24).Radius(6).
-				AlignItems(ui.Center).Center()
+			// The web's focus-visible:opacity-100: a lookless button, so
+			// the keyboard can reach it, and the icon shows while focused.
+			del := ui.ButtonBase(c).Width(24).Height(24).Radius(6)
 			if del.Hovered() {
 				// The web's ghost hover under the trash.
 				del.Background(p.muted.color())
 			}
 			del.Children(func() {
-				// The web's group-hover reveal.
-				if row.Hovered() {
+				// The web's group-hover / focus-visible reveal.
+				if row.Hovered() || del.Focused() {
 					ui.Icon(c, iconTrash).Size(14, 14).
 						TextColor(p.foreground.color())
 				}
@@ -629,9 +630,24 @@ func (a *app) kvInput(c *ui.Context, p palette, value *string, placeholder strin
 		ink = p.border.color()
 	}
 	in.Border(1, ink)
+	focusedRing(p, in)
 	if in.Changed() {
 		a.edit.dirty = true
 	}
+}
+
+// focusedRing paints the web's focus-visible ring on an input: 3px of ring
+// at half alpha just outside the box, as its Ym base shows while focused.
+// MyGo skips the generic focus ring for inputs, so it is drawn here.
+func focusedRing(p palette, e ui.Element) {
+	if !e.Focused() {
+		return
+	}
+	ring := p.ring.color().Alpha(0.5)
+	e.DrawOver(func(pt *ui.Painter, r ui.Rect) {
+		pt.Stroke(ui.Rect{X: r.X - 3, Y: r.Y - 3, W: r.W + 6, H: r.H + 6},
+			ring, 11, 3)
+	})
 }
 
 // kvAddButton adds a row: the full-width dashed offer while the list is

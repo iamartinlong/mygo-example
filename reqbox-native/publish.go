@@ -82,6 +82,7 @@ func (a *app) slugInput(c *ui.Context, p palette) {
 		Height(32).Radius(8).FontSize(14).Font("JetBrains Mono").
 		Padding(0, 10, 0, 10).Placeholder("my-endpoint").
 		Border(1, p.input.color())
+	focusedRing(p, in)
 	if in.Changed() {
 		a.edit.dirty = true
 	}

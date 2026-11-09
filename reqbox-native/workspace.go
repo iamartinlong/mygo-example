@@ -136,8 +136,9 @@ func (a *app) runSettingsDialog(c *ui.Context, p palette) {
 			ui.Column(c).FillWidth().Gap(12).Children(func() {
 				ui.Row(c).FillWidth().Gap(12).AlignItems(ui.Center).Children(func() {
 					ui.Text(c, tr("run.timeout")).FontSize(12).Grow(1)
-					ui.TextInput(c, &a.run.timeout).Width(80).Height(28).
+					timeoutIn := ui.TextInput(c, &a.run.timeout).Width(80).Height(28).
 						FontSize(12).Font("JetBrains Mono")
+					focusedRing(p, timeoutIn)
 					ui.Text(c, tr("run.seconds")).FontSize(11).
 						TextColor(p.mutedFg.color())
 				})

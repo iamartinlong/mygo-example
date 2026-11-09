@@ -130,10 +130,11 @@ func (a *app) promptDialog(c *ui.Context, p palette) {
 				ui.Text(c, strings.ToUpper(a.prompt.label)).FontSize(11).
 					LetterSpacing(1.54).LineHeight(1.4286).Font("JetBrains Mono").
 					SingleLine().TextColor(p.mutedFg.color())
-				ui.TextInputBase(c, &a.prompt.value).FillWidth().Height(32).
+				in := ui.TextInputBase(c, &a.prompt.value).FillWidth().Height(32).
 					Radius(8).FontSize(12).Padding(0, 10, 0, 10).
 					Border(1, p.input.color()).Placeholder(a.prompt.placeholder).
 					AutoFocus()
+				focusedRing(p, in)
 			})
 			ui.Row(c).FillWidth().Padding(4, 0, 0, 0).Gap(8).Justify(ui.End).
 				Children(func() {
