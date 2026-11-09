@@ -180,13 +180,19 @@ KV 编辑器：
 
 ### 剩余步骤（按序）
 
-批19–25 均已落地（批19：kvEditor/publishPane 重写+对照；批20：tab 面板滚动容器；批21：xl 并排布局；批22：响应面板按 web cF 重建；批23：历史标签页按 web Eh 重建；批24：确认/Prompt/cURL/运行设置四对话框按 shadcn 基线重建；批25：环境管理器按 web _F 重建为 768 双栏）。留给下一批的已知差距：
+批19–28 均已落地（批19：kvEditor/publishPane 重写+对照；批20：tab 面板滚动容器；批21：xl 并排布局；批22：响应面板按 web cF 重建；批23：历史标签页按 web Eh 重建；批24：确认/Prompt/cURL/运行设置四对话框按 shadcn 基线重建；批25：环境管理器按 web _F 重建为 768 双栏；批26：环境保存钮 bug 修复；批27：响应编辑器自增长；批28：focus-visible 键盘路径）。留给下一批的已知差距：
 
 - ~~保存按钮偶发不响应~~ **批26 已定位并修复**：真实 bug——新环境态 Save 被 `envEditID != ""` 条件块藏掉（web 无条件渲染 Save，仅删除依 env 存在），叠加调试期红底 sed 误删按钮的 primary 背景导致 Save 隐形；两处已修，新建→保存→列表出现→删除→编辑器清空全链真机闭环。
-- 响应面板的已知近似：长响应体的编辑器原生固定高（224/192px）内部滚动，web 是编辑器自增长、面板滚动；历史重放的请求头/请求体来自快照（替换前的草稿）而非 web history API 存的实际发送值；等待骨架无 pulse 动画（mygo 无对应动画）。
-- 键盘路径：web 删除钮有 `focus-visible:opacity-100` 兜底、输入有 ring，原生未做 focus-visible 显隐与 ring 绘制。
+- ~~响应面板长文编辑器固定高~~ **批27 已改自增长+面板滚动**（$P 边框框 + 行数算高）。剩余近似：历史重放的请求头/请求体来自快照（替换前的草稿）而非 web history API 存的实际发送值；等待骨架无 pulse 动画（mygo 无对应动画）。
+- ~~键盘路径~~ **批28 已补齐**：输入聚焦 ring（ring/50 3px 手绘，六处套用）+ KV 删除钮 ButtonBase 键盘可达、聚焦显隐（见批28 记录）。
 - web 用 `crypto.randomUUID()`，原生用 8 字节随机 hex 作 KV id——格式不同但都是唯一串，库间互换无碍，别当缺陷改。
 
+### 批28 记录（focus-visible 键盘路径）
+
+- **输入 focus ring**：web 的 Ym 输入聚焦时 `focus-visible:border-ring + ring-3 ring-ring/50`。MyGo 对 `kindInput` 跳过通用 focus ring（paint.go 里 `e.kind != kindInput` 才画环），所以在原生侧手绘：新增 `focusedRing` 帮手——聚焦时 `DrawOver` 一个外扩 3px 的 `Stroke`（ring 色 50%、圆角跟随、宽 3）。套用六处：KV 键/值输入、发布路径名、环境名称、环境变量键/值、Prompt 字段、运行超时输入。
+- **KV 删除钮键盘可达**：删除钮从普通 Row 换成 `ui.ButtonBase`（lookless button：能拿到键盘焦点，Enter/Space 可激活，带框架 focus ring）；trash 图标在「行 hover **或按钮聚焦**」时显示——对应 web 的 `focus-visible:opacity-100`。
+- 验证：双击 KV 输入框聚焦、移开光标 → 边框 + 3px ring/50 环共存（红填充法先确认 DrawOver 对输入框生效）；Tab 导航 key→value→删除钮，删除钮聚焦时 trash 显示并带 focus ring。**注入点击首击被窗口激活吞掉是已知伪影**（双击第二击即聚焦），真实鼠标单击即聚焦。
+- 注：此前误以为「输入聚焦只变边框」是基线——实际那只是 hover 边框；聚焦路径本轮才补齐。
 ### 批27 记录（响应面板编辑器自增长 + $P 边框框）
 
 web 的响应编辑器是 `$P`：`overflow-hidden rounded-md border border-border/70 bg-background/40` 的边框框，内容 10px 顶距，`minHeight` 预览 14rem、请求体/原始 12rem，且随内容**自增长、由面板滚动**（不是编辑器内部滚动）。原生此前是固定高 224/192 的裸编辑器内部滚动。
