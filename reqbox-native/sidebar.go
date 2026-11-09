@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"strconv"
 	"strings"
 	"time"
@@ -10,15 +11,16 @@ import (
 	"reqbox-desktop/pkg/store"
 )
 
-// sideRow flattens the sidebar into list rows: section headers and request
-// rows, sections following the collections' order with unfiled requests
-// under UNSORTED, as the web sidebar does.
+// sideRow flattens the sidebar tree into list rows: collection headers,
+// their request rows (indented on a rail), a note when a collection is
+// empty, and the UNSORTED section, as the web sidebar shows them.
 type sideRow struct {
 	header bool
+	note   bool
+	indent bool
 	title  string
 	colID  string // header's collection; "" for UNSORTED
 	req    store.Request
-	edit   string // rename buffer for EditableText
 }
 
 // pending holds actions the row builders noted, applied after the list
@@ -33,6 +35,7 @@ type pending struct {
 	duplicate     string
 	rename        string
 	renameTo      string
+	rebuild       bool
 }
 
 func (a *app) rebuildRows() {
@@ -55,24 +58,33 @@ func (a *app) rebuildRows() {
 		}
 	}
 	rows := make([]sideRow, 0, len(a.reqs)+len(a.cols)+1)
-	add := func(colID, title string, reqs []store.Request) {
-		rows = append(rows, sideRow{header: true, title: title, colID: colID})
-		for _, r := range reqs {
-			rows = append(rows, sideRow{req: r, edit: r.Name})
-		}
-	}
 	for _, c := range a.cols {
-		if reqs := byCol[c.ID]; needle == "" || len(reqs) > 0 {
-			add(c.ID, c.Name, reqs)
+		reqs := byCol[c.ID]
+		if needle != "" && len(reqs) == 0 {
+			continue
+		}
+		rows = append(rows, sideRow{header: true, title: c.Name, colID: c.ID})
+		if a.collapsed[c.ID] {
+			continue
+		}
+		if len(reqs) == 0 {
+			rows = append(rows, sideRow{note: true, indent: true, title: tr("sidebar.empty")})
+			continue
+		}
+		for _, r := range reqs {
+			rows = append(rows, sideRow{req: r, indent: true})
 		}
 	}
 	if needle == "" || len(unsorted) > 0 {
-		add("", tr("sidebar.unsorted"), unsorted)
+		rows = append(rows, sideRow{header: true, title: tr("sidebar.unsorted")})
+		for _, r := range unsorted {
+			rows = append(rows, sideRow{req: r})
+		}
 	}
 	a.rows = rows
 	a.selRow = -1
 	for i, row := range rows {
-		if !row.header && row.req.ID == a.selectedID {
+		if !row.header && !row.note && row.req.ID == a.selectedID {
 			a.selRow = i
 		}
 	}
@@ -97,6 +109,12 @@ func (a *app) refresh() {
 func (a *app) applyPending() {
 	p := &a.pending
 	switch {
+	case p.rebuild:
+		// A fold toggled mid-render: redo the flattened rows now that
+		// the build loop is done.
+		a.pending = pending{}
+		a.rebuildRows()
+		return
 	case p.newRequest:
 		a.st.CreateRequest(store.Request{Name: tr("sidebar.newRequest"), Method: "GET"})
 		a.toastOK(tr("toast.requestCreated"))
@@ -160,21 +178,21 @@ func (a *app) sidebarPane(c *ui.Context, p palette) {
 			return
 		}
 		a.filterRow(c, p)
-		a.list.Selected = &a.selRow
-		// Grow(1) is the web's flex-1 min-h-0: it pushes the footer bar down
-		// to the bottom of the rail instead of leaving it under the last row.
-		e := ui.List(c, &a.list, len(a.rows),
-			func(i int) { a.sideRowView(c, p, i) }).Grow(1)
-		e.ItemKey(func(i int) any {
-			if a.rows[i].header {
-				return "h:" + a.rows[i].title
-			}
-			return a.rows[i].req.ID
+		// Plain rows in a scroll, not a ui.List: the list's selectable rows
+		// consume the clicks of the controls inside them (batch 23), which
+		// the tree's kebab menus and fold chevrons need. The scroll sits in
+		// a growing column, the batch-20 pattern.
+		ui.Column(c).Grow(1).FillWidth().Children(func() {
+			ui.Scroll(c).FillHeight().FillWidth().Clip().
+				TrackScroll(&a.treeScroll).Children(func() {
+				ui.Column(c).FillWidth().Padding(4, 8, 12, 8).Children(func() {
+					for i := range a.rows {
+						a.sideRowView(c, p, i)
+					}
+					a.applyPending()
+				})
+			})
 		})
-		if e.Changed() && a.selRow >= 0 && !a.rows[a.selRow].header {
-			a.selectedID = a.rows[a.selRow].req.ID
-		}
-		a.applyPending()
 		a.footerRow(c, p)
 	})
 }
@@ -365,54 +383,232 @@ func (a *app) iconBtn(c *ui.Context, p palette, icon *ui.SVG, clicked *bool) {
 
 func (a *app) sideRowView(c *ui.Context, p palette, i int) {
 	row := a.rows[i]
-	if row.header {
-		ui.Row(c).Fill().Padding(12, 12, 6, 12).Children(func() {
-			ui.Text(c, row.title).FontSize(11).LetterSpacing(1.5).
-				Font("JetBrains Mono").SingleLine().TextColor(p.mutedFg.color())
-		}).ContextMenu(func(m *ui.Menu) {
-			if row.colID != "" && m.Item(tr("common.delete")).Chosen() {
-				a.askConfirm(tr("confirm.deleteCollection.title", "name", row.title),
+	switch {
+	case row.header && row.colID != "":
+		a.colHeaderView(c, p, row)
+	case row.header:
+		// UNSORTED is the web's plain eyebrow line, not a foldable header.
+		ui.Row(c).Fill().Padding(8, 8, 4, 8).Children(func() {
+			ui.Text(c, strings.ToUpper(row.title)).FontSize(11).
+				LetterSpacing(1.54).Font("JetBrains Mono").SingleLine().
+				TextColor(p.mutedFg.color())
+		})
+	case row.note:
+		n := ui.Row(c).Fill().Margin(0, 0, 0, 8).Padding(4, 4, 4, 14).
+			BorderWidth(0, 0, 0, 1).BorderColor(p.border.color().Alpha(0.6))
+		n.Children(func() {
+			ui.Text(c, row.title).FontSize(11).SingleLine().
+				TextColor(p.mutedFg.color().Alpha(0.7))
+		})
+	default:
+		a.reqRowView(c, p, row)
+	}
+}
+
+// colHeaderView is a collection line: chevron, folder, name and count,
+// with a kebab menu on the right; a click folds or unfolds it.
+func (a *app) colHeaderView(c *ui.Context, p palette, row sideRow) {
+	folded := a.collapsed[row.colID]
+	h := ui.Row(c).Fill().Padding(4, 4, 4, 4).Gap(4).AlignItems(ui.Center).Radius(6)
+	if h.Hovered() {
+		h.Background(p.accent.color().Alpha(0.4))
+	}
+	h.Children(func() {
+		chev := iconChevronDown
+		if folded {
+			chev = iconChevronRt
+		}
+		ui.Icon(c, chev).Size(12, 12).TextColor(p.mutedFg.color())
+		ui.Icon(c, iconFolder).Size(14, 14).TextColor(p.mutedFg.color())
+		ui.Text(c, row.title).FontSize(12).FontWeight(500).SingleLine().
+			TextColor(p.foreground.color().Alpha(0.85)).Grow(1).
+			Basis(0).MinWidth(0)
+		if n := len(a.reqsIn(row.colID)); n > 0 {
+			ui.Text(c, fmt.Sprint(n)).FontSize(10).Font("JetBrains Mono").
+				TextColor(p.mutedFg.color().Alpha(0.7))
+		}
+		a.kebab(c, p, h, "c:"+row.colID, func(panel ui.Element) {
+			a.sideMenuItem(c, p, panel, iconPlus, tr("sidebar.newRequestHere"), false, func() {
+				id := row.colID
+				if _, err := a.st.CreateRequest(store.Request{
+					Name: tr("sidebar.untitledRequest"), Method: "GET", CollectionID: &id,
+				}); err == nil {
+					a.toastOK(tr("toast.requestCreated"))
+					a.refresh()
+				}
+			})
+			a.sideMenuItem(c, p, panel, nil, tr("common.rename"), false, func() {
+				id, current := row.colID, row.title
+				a.askPrompt(tr("common.rename"), "", tr("prompt.newCollection.label"),
+					current, "", tr("common.save"), func(v string) {
+						name := strings.TrimSpace(v)
+						if name == "" || a.st == nil {
+							return
+						}
+						if _, err := a.st.UpdateCollection(id, &name, nil); err == nil {
+							a.refresh()
+						}
+					})
+			})
+			a.sideMenuItem(c, p, panel, iconTrash, tr("sidebar.deleteCollection"), true, func() {
+				id, title := row.colID, row.title
+				a.askConfirm(tr("confirm.deleteCollection.title", "name", title),
 					tr("confirm.deleteCollection.desc"),
 					tr("confirm.deleteCollection.confirm"),
-					func() { a.pending.deleteCol = row.colID })
-			}
+					func() { a.pending.deleteCol = id })
+			})
 		})
-		return
+	})
+	if h.Clicked() {
+		if a.collapsed == nil {
+			a.collapsed = map[string]bool{}
+		}
+		a.collapsed[row.colID] = !folded
+		// The rows were flattened before the fold; redo them after the
+		// loop, so its index stays valid.
+		a.pending.rebuild = true
 	}
+}
+
+// reqsIn counts the requests a collection holds, for its header count.
+func (a *app) reqsIn(colID string) []store.Request {
+	var out []store.Request
+	for _, r := range a.reqs {
+		if r.CollectionID != nil && *r.CollectionID == colID {
+			out = append(out, r)
+		}
+	}
+	return out
+}
+
+// reqRowView is a request line: the method tag, name and path, the
+// published dot, and a kebab menu revealed on hover.
+func (a *app) reqRowView(c *ui.Context, p palette, row sideRow) {
 	r := row.req
-	reqRow := ui.Row(c).Fill().Padding(6, 4, 6, 8).Gap(8).
-		AlignItems(ui.Center)
-	if r.ID == a.selectedID {
-		reqRow = reqRow.Background(p.accent.color())
+	e := ui.Row(c).Fill().Padding(6, 4, 6, 8).Gap(8).AlignItems(ui.Center).
+		Radius(6)
+	if row.indent {
+		e = e.Margin(0, 0, 0, 8).BorderWidth(0, 0, 0, 1).
+			BorderColor(p.border.color().Alpha(0.6)).Padding(6, 4, 6, 14)
 	}
-	reqRow.Children(func() {
+	if r.ID == a.selectedID {
+		e.Background(p.accent.color())
+	} else if e.Hovered() {
+		e.Background(p.accent.color().Alpha(0.6))
+	}
+	e.Children(func() {
 		m := p.method(r.Method)
-		ui.Row(c).Height(18).Padding(0, 6, 0, 6).AlignItems(ui.Center).
+		tag := strings.ToUpper(strings.TrimSpace(r.Method))
+		if len(tag) > 4 {
+			tag = tag[:4]
+		}
+		ui.Row(c).Padding(1, 4, 1, 4).Radius(4).
 			Background(m.color().Alpha(0.1)).Children(func() {
-			ui.Text(c, r.Method).FontSize(9).Font("JetBrains Mono").
-				TextColor(m.color())
+			ui.Text(c, tag).FontSize(9.5).Bold().LetterSpacing(0.24).
+				Font("JetBrains Mono").SingleLine().TextColor(m.color())
 		})
-		ui.Column(c).Grow(1).Gap(1).Children(func() {
-			t := ui.EditableText(c, &a.rows[i].edit).FontSize(12.5).
-				TextColor(p.foreground.color().Alpha(0.9)).SingleLine()
-			if t.Changed() {
-				a.pending.rename = r.ID
-				a.pending.renameTo = a.rows[i].edit
-			}
+		ui.Column(c).Grow(1).Basis(0).MinWidth(0).Children(func() {
+			ui.Text(c, r.Name).FontSize(12.5).SingleLine().
+				TextColor(p.foreground.color().Alpha(0.9))
 			ui.Text(c, displayURL(r.URL)).FontSize(10.5).Font("JetBrains Mono").
 				SingleLine().TextColor(p.mutedFg.color().Alpha(0.8))
 		})
-	}).ContextMenu(func(m *ui.Menu) {
-		if m.Item(tr("sidebar.duplicate")).Chosen() {
-			a.pending.duplicate = r.ID
+		if r.Exposed {
+			ui.Row(c).Width(6).Height(6).Radius(3).
+				Background(p.ok.color())
 		}
-		m.Separator()
-		if m.Item(tr("common.delete")).Chosen() {
-			a.askConfirm(tr("confirm.deleteRequest.title", "name", r.Name),
-				tr("confirm.deleteRequest.desc"),
-				tr("confirm.deleteRequest.confirm"), func() { a.pending.deleteReq = r.ID })
+		a.kebab(c, p, e, "r:"+r.ID, func(panel ui.Element) {
+			a.sideMenuItem(c, p, panel, iconCopy, tr("sidebar.duplicate"), false, func() {
+				a.pending.duplicate = r.ID
+			})
+			on := !r.Exposed
+			label := tr("sidebar.publishMock")
+			if r.Exposed {
+				label = tr("sidebar.unpublishMock")
+			}
+			a.sideMenuItem(c, p, panel, iconGlobe, label, false, func() {
+				rec := r
+				rec.Exposed = on
+				if on && rec.ExposeSlug == "" {
+					rec.ExposeSlug = a.suggestSlug(rec.Name)
+				}
+				if _, err := a.st.UpdateRequest(rec, false); err == nil {
+					if on {
+						a.toastOK(tr("toast.mockPublished"))
+					} else {
+						a.toastOK(tr("toast.mockUnpublished"))
+					}
+					a.refresh()
+				}
+			})
+			a.sideMenuItem(c, p, panel, iconTrash, tr("common.delete"), true, func() {
+				a.askConfirm(tr("confirm.deleteRequest.title", "name", r.Name),
+					tr("confirm.deleteRequest.desc"),
+					tr("confirm.deleteRequest.confirm"),
+					func() { a.pending.deleteReq = r.ID })
+			})
+		})
+	})
+	if e.Clicked() {
+		a.selectedID = r.ID
+	}
+}
+
+// kebab is the row's three-dot button, shown while the row hovers or its
+// menu is open; build fills the menu.
+func (a *app) kebab(c *ui.Context, p palette, row ui.Element, id string, build func(panel ui.Element)) {
+	openNow := a.sideMenuOn && a.sideMenuID == id
+	kb := ui.Row(c).Width(24).Height(24).Radius(6).
+		AlignItems(ui.Center).Center()
+	if kb.Hovered() {
+		kb.Background(p.muted.color())
+	}
+	kb.Children(func() {
+		if row.Hovered() || openNow {
+			ui.Icon(c, iconEllipsis).Size(14, 14).TextColor(p.mutedFg.color())
 		}
 	})
+	if kb.Clicked() {
+		a.sideMenuOn = true
+		a.sideMenuID = id
+	}
+	// Recompute after the click: the press may have just opened it, and
+	// the dismiss sync below must not undo that in the same frame.
+	open := a.sideMenuOn && a.sideMenuID == id
+	ui.PopoverBase(c, kb, &open, func(panel ui.Element) {
+		panel.MinWidth(176).Margin(4, 0, 0, 0).Padding(4).
+			Background(p.card.color()).Radius(6).Border(1, p.border.color())
+		build(panel)
+	})
+	if !open && a.sideMenuOn && a.sideMenuID == id {
+		a.sideMenuOn = false
+	}
+}
+
+// sideMenuItem is one line of a kebab menu; choosing it closes the menu
+// and runs fn.
+func (a *app) sideMenuItem(c *ui.Context, p palette, panel ui.Element, icon *ui.SVG, label string, destructive bool, fn func()) {
+	it := ui.Row(c).FillWidth().Height(28).Padding(0, 8, 0, 8).Gap(6).
+		AlignItems(ui.Center).Radius(4)
+	ink := p.foreground.color()
+	if destructive {
+		ink = p.bad.color()
+	}
+	if it.Hovered() {
+		it.Background(p.accent.color())
+	}
+	it.Children(func() {
+		if icon != nil {
+			ui.Icon(c, icon).Size(12, 12).TextColor(ink)
+		}
+		ui.Text(c, label).FontSize(12).SingleLine().TextColor(ink)
+	})
+	if it.Clicked() {
+		a.sideMenuOn = false
+		if fn != nil {
+			fn()
+		}
+	}
 }
 
 // displayURL is the web's Sh: the URL's path, its host when the path is

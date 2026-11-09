@@ -155,29 +155,36 @@ func (a *app) panelArea(c *ui.Context, p palette, capped bool) {
 func (a *app) emptyState(c *ui.Context, p palette) {
 	ui.Column(c).Fill().AlignItems(ui.Center).Center().Padding(0, 24, 0, 24).
 		Children(func() {
-			ui.Column(c).Width(448).Gap(12).Children(func() {
+			ui.Column(c).Width(448).Children(func() {
 				ui.Text(c, strings.ToUpper(tr("empty.eyebrow"))).
-					FontSize(11).LetterSpacing(1.5).Font("JetBrains Mono").
+					FontSize(11).LetterSpacing(1.54).Font("JetBrains Mono").
 					TextColor(p.mutedFg.color())
-				ui.Text(c, tr("empty.title")).FontSize(21).Bold().LineHeight(1.25)
-				ui.Text(c, tr("empty.desc")).FontSize(13).
+				ui.Row(c).Height(8)
+				// text-2xl semibold tracking-tight, leading-tight.
+				ui.Text(c, tr("empty.title")).FontSize(24).FontWeight(600).
+					LetterSpacing(-0.6).LineHeight(1.25)
+				ui.Row(c).Height(12)
+				ui.Text(c, tr("empty.desc")).FontSize(13).LineHeight(1.625).
 					TextColor(p.mutedFg.color())
-				ui.Row(c).Height(34).Gap(10).AlignItems(ui.Center).Children(func() {
-					e := ui.Row(c).Height(28).Padding(0, 14, 0, 14).Gap(7).Radius(6).
-						AlignItems(ui.Center).Background(p.foreground.color()).
-						Children(func() {
-							ui.Icon(c, iconFileText).Size(13, 13).
-								TextColor(p.primaryFg.color())
-							ui.Text(c, tr("empty.newRequest")).FontSize(12).
-								SingleLine().TextColor(p.primaryFg.color())
-						})
+				ui.Row(c).Height(20)
+				ui.Row(c).Gap(8).AlignItems(ui.Center).Children(func() {
+					e := ui.Row(c).Height(32).Padding(0, 10, 0, 10).Gap(6).
+						Radius(6).AlignItems(ui.Center).
+						Background(p.primary.color()).Children(func() {
+						ui.Icon(c, iconFileText).Size(16, 16).
+							TextColor(p.primaryFg.color())
+						ui.Text(c, tr("empty.newRequest")).FontSize(14).
+							FontWeight(500).SingleLine().TextColor(p.primaryFg.color())
+					})
 					if e.Clicked() {
 						a.pending.newRequest = true
 					}
 					ui.Text(c, tr("empty.orPress")).FontSize(10.5).
 						Font("JetBrains Mono").TextColor(p.mutedFg.color())
 				})
+				ui.Row(c).Height(32)
 				ui.Row(c).Fill().Height(1).Background(p.hairline.color())
+				ui.Row(c).Height(16)
 				ui.Row(c).Gap(16).Children(func() {
 					a.featureCol(c, p, tr("empty.featRequests"), tr("empty.featRequestsSub"))
 					a.featureCol(c, p, tr("empty.featHistory"), tr("empty.featHistorySub"))
@@ -189,7 +196,7 @@ func (a *app) emptyState(c *ui.Context, p palette) {
 
 func (a *app) featureCol(c *ui.Context, p palette, title, sub string) {
 	ui.Column(c).Grow(1).Gap(2).Children(func() {
-		ui.Text(c, title).FontSize(12).Bold().SingleLine()
+		ui.Text(c, title).FontSize(12).FontWeight(500).SingleLine()
 		ui.Text(c, sub).FontSize(10.5).SingleLine().
 			TextColor(p.mutedFg.color())
 	})

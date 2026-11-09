@@ -24,6 +24,7 @@ type app struct {
 	cols        []store.Collection
 	rows        []sideRow
 	list        ui.ListState
+	treeScroll  ui.ScrollState
 	selRow      int // ui.List choice; -1 none
 	selectedID  string
 	filter      string
@@ -45,6 +46,12 @@ type app struct {
 	sideTab    string // "requests" or "history"
 	hist       []store.HistoryEntry
 	histFilter string // the history tab's own search text
+
+	// collapsed keeps the collections the user folded in the sidebar tree,
+	// and sideMenu the row whose kebab menu is open (one at a time).
+	collapsed  map[string]bool
+	sideMenuOn bool
+	sideMenuID string
 
 	histList ui.ListState
 

@@ -187,6 +187,21 @@ KV 编辑器：
 - ~~键盘路径~~ **批28 已补齐**：输入聚焦 ring（ring/50 3px 手绘，六处套用）+ KV 删除钮 ButtonBase 键盘可达、聚焦显隐（见批28 记录）。
 - web 用 `crypto.randomUUID()`，原生用 8 字节随机 hex 作 KV id——格式不同但都是唯一串，库间互换无碍，别当缺陷改。
 
+### 批29 记录（侧栏树、空态按 web 重建）
+
+web 侧栏是树：集合头（chevron 折叠 + folder + 名称 12 medium fg/85 + 数量 mono 10 muted/70 + hover 显 kebab）+ 子行容器（ml-2 + border-l border/60 + pl-1.5，空集合显示「空」）+ 请求行（方法 tag `mono 9.5 bold tracking-wide px-1 py-[1px] rounded` 取**前 4 字符**、名称 12.5 fg/90、路径 10.5 mono muted/80、已发布绿点 6px、hover 显 kebab）+ 未分类为 eyebrow 行。原生重建：
+
+- **请求行**：方法 tag 4 字符（PATCH→PATC、DELETE→DELE，与 web `slice(0,4)` 一致）、字号/字重/外距对齐；名称/路径配色字号对齐；**已发布绿点**补上；行点击即选中（不再依赖 ui.List 选择）。
+- **集合头**：chevron（折叠态右向）+ folder 图标（新转写 lucide folder）+ 名称 12 medium + 请求数 + hover 显 kebab；点击整行折叠/展开（`collapsed` map + `pending.rebuild` 延后重建）。
+- **kebab 菜单**（新写 `kebab` + `sideMenuItem`，PopoverBase，一个开启态 `sideMenuOn/sideMenuID`）：集合 = 在此新建请求/重命名（Prompt 对话框，UpdateCollection）/删除集合（确认框）；请求 = 创建副本/发布取换（更新 Exposed+slug 并 toast）/删除（确认框）。三齿 kebab 图标新转写 lucide ellipsis。
+- **列表容器换 Scroll**：ui.List 的可选行会吞掉行内控件点击（批23 教训），侧栏树需要 kebab/折叠可点——改为 `Column(Grow(1)) + Scroll(FillHeight Clip TrackScroll)` + 手写选择；行内完整交互恢复。历史页仍保留 List + 右键删除（现状已定案）。
+- **空态按 web SF 重写**：标题 21→24 semibold tracking-tight(-0.6)、间距改为 mb-2/mt-3/mt-5/mt-8 显式节距、按钮 28→32 高（px-2.5、14px 文字、16px 图标）、描述 13/1.625、特性三列 dt 12 medium + dd 10.5 + border-t pt-4。
+- 验证：树渲染/缩进轨道/空集合「空」/未分类 eyebrow ✓、请求行 hover kebab → 菜单（创建副本/取消发布/删除）✓、集合 kebab → 菜单（在此新建/重命名/删除集合）✓、集合折叠展开 ✓（含一次 mid-loop rebuild panic 修复——recated 用 pending.rebuild 延后）、行点击选中 ✓；空态用临时 force 渲染截图核对（真实数据不可清空）。
+
+- **踩坑**：
+  - PopoverBase 的 open 状态：点击当帧刚打开时不能用「上一帧算出的 open」做关闭同步（会被同帧抹掉）——在 Clicked 处理后重算 open。
+  - **render 循环里 rebuildRows 会 panic**（行数变化后旧索引越界）——折叠改由 pending.rebuild 在循环后应用。
+  - sed/perl 修代码时 `\n` 多行模式在 sed 行模式不生效，误用会毁文件头——本批有一次 sidebar.go 头部损坏（package 行丢失/多余花括号），靠手工修复；今后多行修改一律用 Edit。
 ### 批28 记录（focus-visible 键盘路径）
 
 - **输入 focus ring**：web 的 Ym 输入聚焦时 `focus-visible:border-ring + ring-3 ring-ring/50`。MyGo 对 `kindInput` 跳过通用 focus ring（paint.go 里 `e.kind != kindInput` 才画环），所以在原生侧手绘：新增 `focusedRing` 帮手——聚焦时 `DrawOver` 一个外扩 3px 的 `Stroke`（ring 色 50%、圆角跟随、宽 3）。套用六处：KV 键/值输入、发布路径名、环境名称、环境变量键/值、Prompt 字段、运行超时输入。
