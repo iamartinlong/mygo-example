@@ -131,12 +131,13 @@ mygo.NewWindow(mygo.WindowOptions{URL: "/"})
 
 每批完成 = 编译 + 真机运行 + 截图与 web 版同面板对照 + 提交。
 
-## 九、交接点（2026-11-09，批19–25 完成）
+## 九、交接点（2026-11-10，批19–32 完成）
 
 目标：把参数/请求头 KV 编辑器与发布面板按 web 基线重做（批15–18 已把请求框、标签条、Body/Auth 对齐）。**批19 已完成**：`reqbar.go` 的 `kvEditor` 重写为 tF 网格（eyebrow 表头 + border/60 发丝线、24/1fr/1.4fr/32 列 + gap 8、行高 32 radius 4、未启用整行 Opacity(0.45)、14px 复选框、28px mono 14 输入框无框/hover border/60/聚焦 border、hover 显 trash 14 删除钮 24×24、空态虚线 h-16 与非空小按钮 `mt-1.5` 双态、参数页脚 mono 10.5 按计数显隐、请求头页脚恒挂非 mono）；`publish.go` 的 `publishPane` 重写为 sF 堆叠（MaxWidth 512 gap 12：intro 12/1.625、开关卡=整卡 CheckboxBase radius 6 px-3 py-2.5 gap 10、路径名 iF（eyebrow/32px mono 14 输入 + outline sm 自动生成钮，暗色走 input token）、Mock URL 条 h-40 muted/50（globe 14 text-ok + mono 11 + ghost xs 复制钮）、覆盖卡 mt-1 radius 6 border-border/60 bg-muted/30）。明暗 × 参数/请求头/Body=form/发布 八张截图对照通过，截图仅本地 temp 不入库。
 
 ### 推送链
 
+- 2026-11-10 交接：批26–32 八次（b651ba8…1550721）已推送，交接文档更新一次，推后 `git status -sb` 与 `origin/main` 齐平。
 - 2026-11-09 交接后已推送（用户「提交推送」）：批19–25 七次（3d244b2…282216a）+ 交接文档更新一次；推前 `git fetch` 比对过，远端无新提交，`git status -sb` 推后与 `origin/main` 齐平。批14–18 与批19–25 的分界：批 14–18 对齐请求框/标签条/Body/Auth（2026-11-07 已推），批 19–25 重做 KV 编辑器/发布/响应面板/历史/四对话框/环境管理器（本次推送）。
 - 2026-11-07 交接后已推送（用户「提交推送」）：批14–18 六次 + 交接文档两次 + 图标预备一次。
 - 交接默认不推送；远端只有 `iamartinlong/mygo-example`，推之前先 `git fetch` 比对。
@@ -180,13 +181,13 @@ KV 编辑器：
 
 ### 剩余步骤（按序）
 
-批19–30 均已落地（批19–28 见各批记录；批29：侧栏树与空态按 web 重建；批30：打包与更新链）。留给后续的已知差距：
+批19–32 均已落地（批19–28 见各批记录；批29：侧栏树与空态按 web 重建；批30：打包与更新链；批31：暗色窗框白边修复；批32：发版 reqbox-native-v0.1.1，发布与跨版本升级 E2E 均已闭环）。留给后续的已知差距：
 
 - ~~保存按钮偶发不响应~~ **批26 已定位并修复**：真实 bug——新环境态 Save 被 `envEditID != ""` 条件块藏掉（web 无条件渲染 Save，仅删除依 env 存在），叠加调试期红底 sed 误删按钮的 primary 背景导致 Save 隐形；两处已修，新建→保存→列表出现→删除→编辑器清空全链真机闭环。
 - ~~响应面板长文编辑器固定高~~ **批27 已改自增长+面板滚动**（$P 边框框 + 行数算高）。剩余近似：历史重放的请求头/请求体来自快照（替换前的草稿）而非 web history API 存的实际发送值；等待骨架无 pulse 动画（mygo 无对应动画）。
 - ~~键盘路径~~ **批28 已补齐**：输入聚焦 ring（ring/50 3px 手绘，六处套用）+ KV 删除钮 ButtonBase 键盘可达、聚焦显隐（见批28 记录）。
 - ~~侧栏请求行/空态未对照~~ **批29 已重建**（树结构/kebab 菜单/折叠/空态样式，见批29 记录）。toast 仍是自定义近似 sonner 默认（形状已对齐，图标细节未逐像素）。
-- ~~无打包/更新链~~ **批30 已补齐**（mygo.json + 专用密钥 + updater 插件 + 签名构建 + 安装器 + 管装验证；**发布与跨版本升级 E2E 等用户指令**）。
+- ~~无打包/更新链~~ **批30 已补齐、批32 已发版验证**：mygo.json + 专用密钥 + updater 插件 + 签名构建 + 安装器；`reqbox-native-v0.1.1` 已发布（release 439248014，latest 隔离保持），安装版已升级至 0.1.1 且更新检查正常。下次发版（0.1.2 起）构建时会自动生成 0.1.1 的 delta。
 - 历史重放的请求头/请求体近似：需扩展共享 store 的 history 表（影响双端 DB schema），单独评估后再动。
 - 等待骨架无 pulse 动画（mygo 有动画能力，可按需实现）。
 - web 用 `crypto.randomUUID()`，原生用 8 字节随机 hex 作 KV id——格式不同但都是唯一串，库间互换无碍，别当缺陷改。
@@ -196,7 +197,7 @@ KV 编辑器：
 - **版本**：mygo.json 0.1.0→0.1.1 + 新增 `reqbox-native/CHANGELOG.md`（批19–31 内容资产、键盘路径、DWM 边框、打包）；提交 `6dfe735`，`git push` 后 main 与远端齐平。
 - **签名构建**：`Reqbox Native.exe` 21.6MB（VersionInfo 0.1.1）、安装器 6.9MB、签名 tar.gz 9.0MB、`update-windows-amd64.json` 2KB（嵌入 CHANGELOG 摘要）+ install.ps1 + SHA256SUMS。
 - **发布（REST API）**：release id 439248014、tag `reqbox-native-v0.1.1`、**draft 建立 → 5 个资产上传（manifest 最后）→ PATCH 发布**、`make_latest: false`；复核仓库 latest 仍为 todo 的 `v0.3.1` ✓，tar.gz 与 manifest 的下载 URL 均 200 ✓。首个发布版无 delta 属正常。
-- **E2E 受阻（如实记录）**：GitHub 匿名 API 限额（60/h，本 IP 已被构建/测试耗尽，重置点 23:52）导致安装版 0.1.0 的 10s 自动检查失败；插件的失败只在内存记录（`updater.json` 保持 `{}`，不写 failed 时间）。已安排 23:53 的一次性自动化验证（启动安装版→自动检查→弹更新窗→安装→核对 0.1.1）。本地自建 feed 的方案试过但 mygo 构建期强制 `updates.url` 为 https（运行期才对 loopback 放行），未采用。
+- **E2E（已闭环，2026-11-10 复核）**：23:53 的首次验证因匿名配额仍有残留而失败（`updater.json` 保持 `{}`）。跨夜后配额恢复：盘上安装版 exe 已为 **0.1.1**（`updater.json` 记录 02:54 与 06:51 两次成功检查——升级在哪一步完成无法从记录区分，可能为更新窗点击或手动安装，但**最终状态已验证**）；06:51 本次启动的检查成功且无待装更新（已是最新），启动画面确认 0.1.1 UI 正常。教训：GitHub 匿名 API 60/h，构建查 delta + 发布调用 + 排障时的 `rate_limit` 查询都会消耗——验证升级前**不要**再打 api.github.com。本地自建 feed 的方案试过但 mygo 构建期强制 `updates.url` 为 https（运行期才对 loopback 放行），未采用。
 
 **踩坑**：
 - `updater.json` 为 `{}` 不代表"没检查"——检查失败不落盘、成功才写 `LastCheck`；判断检查是否成功看该字段。
