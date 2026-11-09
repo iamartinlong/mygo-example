@@ -2,5 +2,11 @@
   "name": "Reqbox Native",
   "identifier": "dev.martinlong.reqbox-native",
   "version": "0.1.0",
-  "out": "build"
+  "copyright": "© 2026 Martin Long",
+  "out": "build",
+  "updates": {
+    "publicKey": "1EJYCQa+/nP50siMRP/wJ2gQ5SjuBfar72NJ0P650EI=",
+    "github": "iamartinlong/mygo-example",
+    "tagPrefix": "reqbox-native-v"
+  }
 }

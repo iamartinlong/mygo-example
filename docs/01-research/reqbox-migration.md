@@ -187,6 +187,18 @@ KV 编辑器：
 - ~~键盘路径~~ **批28 已补齐**：输入聚焦 ring（ring/50 3px 手绘，六处套用）+ KV 删除钮 ButtonBase 键盘可达、聚焦显隐（见批28 记录）。
 - web 用 `crypto.randomUUID()`，原生用 8 字节随机 hex 作 KV id——格式不同但都是唯一串，库间互换无碍，别当缺陷改。
 
+### 批30 记录（打包与更新链）
+
+按路线 A（`reqbox-desktop`）验证过的 mygo 打包流程，给 `reqbox-native` 补上分发能力：
+
+- **mygo.json**：`name: Reqbox Native`、`identifier: dev.martinlong.reqbox-native`、`version: 0.1.0`、`out: build`、`updates.github: iamartinlong/mygo-example`、**`tagPrefix: reqbox-native-v`**（与 webview 版 `reqbox-v*`、todo 的 `v*` 三方隔离）。
+- **专用更新密钥**：`mygo keygen -o %APPDATA%/mygo/update-keys/reqbox-native` 生成 Ed25519 密钥对（密钥在仓库外；公钥写入 mygo.json）。
+- **updater 接入**：`main.go` 启动前 `mygo.Use(updater.Plugin)`（启动 10s 后后台检查、此后每日；窗口自带安装/重启流程）。
+- **图标**：复用 webview 版 `resources/icon.png`（同产品）。
+- **签名构建**：`MYGO_UPDATER_PRIVATE_KEY=$(cat .../mygo-update.key) go run github.com/egoist/mygo/cmd/mygo build` → `build/windows-amd64/`：`Reqbox Native.exe` 21.6MB、安装器 `reqbox-native-setup-0.1.0-amd64.exe` 6.9MB、签名更新包 `reqbox-native-0.1.0-windows-amd64.tar.gz` 9.0MB、`update-windows-amd64.json`（含 ed25519 签名）、`install.ps1`、`SHA256SUMS`。exe VersionInfo=0.1.0。
+- **验证**：`MSYS_NO_PATHCONV=1 ... /S` 静默安装 exit 0 → 注册表 Uninstall 键与 `%LOCALAPPDATA%\Programs\Reqbox Native`（含 Uninstall.exe）就位；安装版启动正常（空态/侧栏/顶栏完整，含批29 新空态样式）。
+- **未做（外部动作，等用户开口）**：GitHub Release 发布（draft→manifest 最后传→published，`make_latest=false`）、安装版跨版本升级 E2E（需先发布 0.1.0 再发新版才有 delta）。首个版本无 delta 属正常（构建时 GitHub API 403 限流，也不影响首版）。
+- **数据目录**：安装版 exe 名 "Reqbox Native" → `%APPDATA%\Reqbox Native`，与 dev 运行的 `%APPDATA%\reqbox-native` 相互独立（前者是正式入口的空库，后者保留开发数据）；未调用 SetName 以免改动既有目录。
 ### 批29 记录（侧栏树、空态按 web 重建）
 
 web 侧栏是树：集合头（chevron 折叠 + folder + 名称 12 medium fg/85 + 数量 mono 10 muted/70 + hover 显 kebab）+ 子行容器（ml-2 + border-l border/60 + pl-1.5，空集合显示「空」）+ 请求行（方法 tag `mono 9.5 bold tracking-wide px-1 py-[1px] rounded` 取**前 4 字符**、名称 12.5 fg/90、路径 10.5 mono muted/80、已发布绿点 6px、hover 显 kebab）+ 未分类为 eyebrow 行。原生重建：

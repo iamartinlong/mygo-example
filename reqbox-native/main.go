@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/plugins/updater"
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 	"reqbox-desktop/pkg/runner"
@@ -245,6 +246,11 @@ func (a *app) loadTheme() {
 func main() {
 	a := &app{sidebar: 290, sideTab: "requests",
 		run: runState{timeout: "30", follow: true, verify: true}}
+	// Background update check 10s after launch, then daily; the window
+	// offers install/relaunch. The feed lives in mygo.json (tagPrefix
+	// reqbox-native-v keeps this app's releases apart from the webview
+	// build's reqbox-v and todo-app's v*).
+	mygo.Use(updater.Plugin)
 	// Before Run: startLocale computes the shown locale with the languages
 	// set at that point, so ours must be in before it does.
 	mygo.App.SetLanguages("en", "zh-Hans")
