@@ -1,7 +1,7 @@
 {
   "name": "Reqbox Native",
   "identifier": "dev.martinlong.reqbox-native",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "copyright": "© 2026 Martin Long",
   "out": "build",
   "updates": {

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2 — 2026-11-10
+
+Maintenance release: the app is unchanged from 0.1.1. It exists to exercise
+the update chain end to end, and carries the first delta update
+(`0.1.1 → 0.1.2`), so an installed 0.1.1 downloads only what changed
+instead of the whole archive.
+
 ## 0.1.1 — 2026-11-09
 
 Native UI port of Reqbox (mygo ui), aligned to the web baseline panel by
