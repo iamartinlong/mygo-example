@@ -1,6 +1,6 @@
 # Reqbox Native（已迁出）
 
-本目录的代码已迁到独立仓库 **[iamartinlong/Reqbox-go](https://github.com/iamartinlong/Reqbox-go)**（2026-11-10，v0.1.2）。
+本目录的代码已迁到独立仓库 **[iamartinlong/Reqbox-go](https://github.com/iamartinlong/Reqbox-go)**（2026-11-10，v0.2.0）。
 
 - 新仓库是唯一维护入口：模块路径 `github.com/iamartinlong/Reqbox-go`，`pkg/store`、`pkg/runner` 已内联
 - 构建、发布与自动更新都在新仓库（`mygo.json` 指向新仓库，`tagPrefix: v`）

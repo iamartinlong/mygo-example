@@ -9,7 +9,7 @@
 - [分发信任：签名与自动更新](01-research/mygo-updates-signing.md) — 更新链路、updater 插件、Windows/macOS 证书方案与成本
 - [生产可用差距调研](01-research/mygo-production-gaps.md) — 交叉编译/IME/版本节奏结论 + 待办清单
 - [组件、主题与自定义组件](01-research/mygo-components-themes.md) — 80+ 控件清单、主题体系、headless 基座/Local/Painter 三层自定义路径
-- [Reqbox 迁移可行性](01-research/reqbox-migration.md) — web 项目（Go+React）迁 mygo：webview 复用 vs 原生重写两条路线；原生版已迁至独立仓库 Reqbox-go（v0.1.2）
+- [Reqbox 迁移可行性](01-research/reqbox-migration.md) — web 项目（Go+React）迁 mygo：webview 复用 vs 原生重写两条路线；原生版已迁至独立仓库 Reqbox-go（v0.2.0）
 
 ## 02-guides — 使用指南
 

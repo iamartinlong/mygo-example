@@ -199,6 +199,7 @@ KV 编辑器：
 - **搬迁内容**：`reqbox-native/` 全部 49 个跟踪文件（源码/图标/字体/mygo.json/CHANGELOG）+ `reqbox-desktop/pkg/store`、`pkg/runner` 内联到新仓库 `pkg/`；模块路径改为 `github.com/iamartinlong/Reqbox-go`，导入同步替换，删除 `replace reqbox-desktop`。
 - **版本与更新源**：新仓库继续 0.1.2；`mygo.json` 的 `updates.github` 改为 `iamartinlong/Reqbox-go`、`tagPrefix` 改 `v`（独立仓库用 `releases/latest`）。**存量 0.1.2 及更早安装版的 feed 仍指向旧仓库，需手动安装一次新仓库版本**，之后自动更新。
 - **验证**：新仓库 `go mod tidy`（依赖钉在与 0.1.2 相同的版本：sqlite v1.39.1、x/sys v0.48.0）、`go build ./...`、`go vet ./...`、`go test ./...` 全过（store/runner 测试通过）；初始提交 `df94600` 已推送 `main`（远端 HEAD 与 raw `mygo.json` 已核对）。
+- **首个发布 v0.2.0**：版本 0.1.2→0.2.0（同代码，标记迁仓），提交 `55e842a` 已推送；签名构建 exe 21.6MB / 安装器 6.9MB / tar.gz 9.0MB，**无 delta**（`no version is published yet`，本仓库没有 0.1.2 可对比）；REST 发布 release id **439839579**、tag `v0.2.0`、5 资产（manifest 最后）、`make_latest=true`；校验 `/releases/latest`=v0.2.0、tag→`55e842a`、`latest/download` feed 的 manifest version=0.2.0。存量 0.1.2 安装版的 feed 仍指旧仓库，需手动装一次 0.2.0。
 - **注意**：`pkg/store`、`pkg/runner` 自此有两份（旧仓库 reqbox-desktop 一份、新仓库一份），共享逻辑改动要双向同步；或后续把旧仓库 webview 版改为依赖新仓库模块（未做，待评估）。`reqbox-native/README.md` 已标注迁出。
 
 ### 批33 记录（发版 reqbox-native-v0.1.2：首个 delta 与增量升级 E2E）
