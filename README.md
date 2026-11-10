@@ -6,7 +6,7 @@
 
 - [`todo-app/`](todo-app/) — todo 桌面应用（mygo 原生 UI 模式：增删、筛选、持久化、单实例、应用图标、NSIS 安装包）
 - [`reqbox-desktop/`](reqbox-desktop/) — Reqbox 桌面版路线 A：webview 复用（Go 后端 + 原 React 前端）
-- [`reqbox-native/`](reqbox-native/) — Reqbox 桌面版路线 B：mygo 原生 UI 重写（2026-11-10 迁至独立仓库 [Reqbox-go](https://github.com/iamartinlong/Reqbox-go)，此处仅作对照）
+- [`reqbox-native/`](reqbox-native/) — Reqbox 桌面版路线 B：mygo 原生 UI 重写（2026-11-10 迁至独立仓库 [Reqbox-go](https://github.com/iamartinlong/Reqbox-go)，待办见其 [TODO.md](https://github.com/iamartinlong/Reqbox-go/blob/main/TODO.md)，此处仅作对照）
 - [`docs/`](docs/README.md) — 知识库（按用途分类）：
   - [01-research](docs/01-research/) — mygo 调研报告、原生 UI API 速查
   - [02-guides](docs/02-guides/) — todo 应用构建/运行/打包指南
