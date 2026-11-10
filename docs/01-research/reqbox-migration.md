@@ -131,12 +131,13 @@ mygo.NewWindow(mygo.WindowOptions{URL: "/"})
 
 每批完成 = 编译 + 真机运行 + 截图与 web 版同面板对照 + 提交。
 
-## 九、交接点（2026-11-10，批19–32 完成）
+## 九、交接点（2026-11-10，批19–33 完成）
 
 目标：把参数/请求头 KV 编辑器与发布面板按 web 基线重做（批15–18 已把请求框、标签条、Body/Auth 对齐）。**批19 已完成**：`reqbar.go` 的 `kvEditor` 重写为 tF 网格（eyebrow 表头 + border/60 发丝线、24/1fr/1.4fr/32 列 + gap 8、行高 32 radius 4、未启用整行 Opacity(0.45)、14px 复选框、28px mono 14 输入框无框/hover border/60/聚焦 border、hover 显 trash 14 删除钮 24×24、空态虚线 h-16 与非空小按钮 `mt-1.5` 双态、参数页脚 mono 10.5 按计数显隐、请求头页脚恒挂非 mono）；`publish.go` 的 `publishPane` 重写为 sF 堆叠（MaxWidth 512 gap 12：intro 12/1.625、开关卡=整卡 CheckboxBase radius 6 px-3 py-2.5 gap 10、路径名 iF（eyebrow/32px mono 14 输入 + outline sm 自动生成钮，暗色走 input token）、Mock URL 条 h-40 muted/50（globe 14 text-ok + mono 11 + ghost xs 复制钮）、覆盖卡 mt-1 radius 6 border-border/60 bg-muted/30）。明暗 × 参数/请求头/Body=form/发布 八张截图对照通过，截图仅本地 temp 不入库。
 
 ### 推送链
 
+- 2026-11-10 发版 0.1.2：版本号+CHANGELOG（966cf27）已推送，交接文档补批33记录后一并推送，`main` 与 `origin/main` 齐平。
 - 2026-11-10 交接：批26–32 八次（b651ba8…1550721）已推送，交接文档更新一次，推后 `git status -sb` 与 `origin/main` 齐平。
 - 2026-11-09 交接后已推送（用户「提交推送」）：批19–25 七次（3d244b2…282216a）+ 交接文档更新一次；推前 `git fetch` 比对过，远端无新提交，`git status -sb` 推后与 `origin/main` 齐平。批14–18 与批19–25 的分界：批 14–18 对齐请求框/标签条/Body/Auth（2026-11-07 已推），批 19–25 重做 KV 编辑器/发布/响应面板/历史/四对话框/环境管理器（本次推送）。
 - 2026-11-07 交接后已推送（用户「提交推送」）：批14–18 六次 + 交接文档两次 + 图标预备一次。
@@ -181,16 +182,28 @@ KV 编辑器：
 
 ### 剩余步骤（按序）
 
-批19–32 均已落地（批19–28 见各批记录；批29：侧栏树与空态按 web 重建；批30：打包与更新链；批31：暗色窗框白边修复；批32：发版 reqbox-native-v0.1.1，发布与跨版本升级 E2E 均已闭环）。留给后续的已知差距：
+批19–33 均已落地（批19–28 见各批记录；批29：侧栏树与空态按 web 重建；批30：打包与更新链；批31：暗色窗框白边修复；批32：发版 reqbox-native-v0.1.1；批33：发版 v0.1.2——首个 delta 与安装版 0.1.1→0.1.2 增量升级 E2E 闭环）。留给后续的已知差距：
 
 - ~~保存按钮偶发不响应~~ **批26 已定位并修复**：真实 bug——新环境态 Save 被 `envEditID != ""` 条件块藏掉（web 无条件渲染 Save，仅删除依 env 存在），叠加调试期红底 sed 误删按钮的 primary 背景导致 Save 隐形；两处已修，新建→保存→列表出现→删除→编辑器清空全链真机闭环。
 - ~~响应面板长文编辑器固定高~~ **批27 已改自增长+面板滚动**（$P 边框框 + 行数算高）。剩余近似：历史重放的请求头/请求体来自快照（替换前的草稿）而非 web history API 存的实际发送值；等待骨架无 pulse 动画（mygo 无对应动画）。
 - ~~键盘路径~~ **批28 已补齐**：输入聚焦 ring（ring/50 3px 手绘，六处套用）+ KV 删除钮 ButtonBase 键盘可达、聚焦显隐（见批28 记录）。
 - ~~侧栏请求行/空态未对照~~ **批29 已重建**（树结构/kebab 菜单/折叠/空态样式，见批29 记录）。toast 仍是自定义近似 sonner 默认（形状已对齐，图标细节未逐像素）。
-- ~~无打包/更新链~~ **批30 已补齐、批32 已发版验证**：mygo.json + 专用密钥 + updater 插件 + 签名构建 + 安装器；`reqbox-native-v0.1.1` 已发布（release 439248014，latest 隔离保持），安装版已升级至 0.1.1 且更新检查正常。下次发版（0.1.2 起）构建时会自动生成 0.1.1 的 delta。
+- ~~无打包/更新链~~ **批30 已补齐、批32/33 已发版并验证增量升级**：mygo.json + 专用密钥 + updater 插件 + 签名构建 + 安装器；`reqbox-native-v0.1.1`（439248014）与 `reqbox-native-v0.1.2`（439815347）均已发布，latest 隔离保持（仓库 latest 仍是 v0.3.1）；0.1.2 带 0.1.1→0.1.2 delta（22KB，整包 9.0MB），安装版实机从 0.1.1 点「安装更新」升到 0.1.2。此后发版构建会自动为前 3 个版本生成 delta。
 - 历史重放的请求头/请求体近似：需扩展共享 store 的 history 表（影响双端 DB schema），单独评估后再动。
 - 等待骨架无 pulse 动画（mygo 有动画能力，可按需实现）。
 - web 用 `crypto.randomUUID()`，原生用 8 字节随机 hex 作 KV id——格式不同但都是唯一串，库间互换无碍，别当缺陷改。
+
+### 批33 记录（发版 reqbox-native-v0.1.2：首个 delta 与增量升级 E2E）
+
+- **版本**：mygo.json 0.1.1→0.1.2 + CHANGELOG 0.1.2 段（维护版本，明说与 0.1.1 无功能差异，用途是打通更新链）；提交 `966cf27`，已推送。
+- **构建**（`GH_TOKEN=... MYGO_UPDATER_PRIVATE_KEY=... go run github.com/egoist/mygo/cmd/mygo build`）：首次构建时匿名 GitHub API 配额耗尽（403，remaining 0/60），没生成 delta；给构建设 `GH_TOKEN`（cmd/mygo/updates.go 对 api.github.com 请求加 Bearer）重建后生成 **0.1.1→0.1.2 delta 22 KB**（整包 9.0 MB），manifest 的 `deltas` 与 `previous` 均正确。
+- **发布**：release id **439815347**、tag `reqbox-native-v0.1.2`、6 资产（tar.gz、delta、setup、install.ps1、SHA256SUMS、manifest 最后）、draft→资产→PATCH published、`make_latest:false`；复核仓库 latest 仍 `v0.3.1` ✓、tag→`966cf27` ✓、tar.gz/delta/manifest 下载 URL 均 200 ✓。
+- **E2E（真机闭环）**：匿名配额重置（08:53 本地）后启动安装版 0.1.1 → 10s 自动检查 →「软件更新」窗显示 0.1.2 与 CHANGELOG 摘要 → 点「安装更新」→ 进度窗 → 旧进程退出、新进程启动，`Reqbox Native.exe` VersionInfo=**0.1.2**、`updater.json lastCheck=08:53:58`、UI 与数据正常（请求列表保留）。旧进程 stderr **没有** `downloading the whole update, as its delta update failed`，说明走的是 delta（22KB）而非整包；安装目录留 `.Reqbox Native.exe.old-<pid>`（swap 备份，正常）。旁路监视没抓到临时目录（delta 应用太快），delta 证据以 stderr 分支为准。
+- **踩坑**：
+  - mygo build 的 delta 预检走**匿名** GitHub API（60/h），发布当天配额可能已被应用检查/前次发布耗光；构建前先看 `x-ratelimit-remaining`，不够就设 `GH_TOKEN`。
+  - **draft release 不能按 tag 查**（`GET /releases/tags/<tag>` 返回 404），要用创建响应里的 release id 上传/发布。
+  - Node 的 `"/tmp"` 是 `C:\tmp`，和 Git Bash 的 `/tmp` 不是一个目录——两边共用的临时文件用 `cygpath -m /tmp` 取 Windows 路径。
+  - 安装版启动即检查：`schedule` 里 `launchChecked` 为 false 时固定等 `firstCheckWait=10s`，不受 `updater.json` 的 24h 间隔限制；`lastCheck` 只影响后续自动检查。
 
 ### 批32 记录（发版 reqbox-native-v0.1.1）
 
