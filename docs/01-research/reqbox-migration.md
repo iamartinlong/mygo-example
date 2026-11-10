@@ -133,10 +133,13 @@ mygo.NewWindow(mygo.WindowOptions{URL: "/"})
 
 ## 九、交接点（2026-11-10，批19–34 完成）
 
+> **2026-11-10 收尾交接**：原生版已迁到独立仓库 [Reqbox-go](https://github.com/iamartinlong/Reqbox-go)（v0.2.0），本仓库 `reqbox-native/` 仅作对照。**后续 native 的改动、待办与发版都在新仓库**，待办见其 [TODO.md](https://github.com/iamartinlong/Reqbox-go/blob/main/TODO.md)。本仓库保留路线 A（`reqbox-desktop`）、知识库与本迁移记录（历史档案，不再改 native 代码）。
+
 目标：把参数/请求头 KV 编辑器与发布面板按 web 基线重做（批15–18 已把请求框、标签条、Body/Auth 对齐）。**批19 已完成**：`reqbar.go` 的 `kvEditor` 重写为 tF 网格（eyebrow 表头 + border/60 发丝线、24/1fr/1.4fr/32 列 + gap 8、行高 32 radius 4、未启用整行 Opacity(0.45)、14px 复选框、28px mono 14 输入框无框/hover border/60/聚焦 border、hover 显 trash 14 删除钮 24×24、空态虚线 h-16 与非空小按钮 `mt-1.5` 双态、参数页脚 mono 10.5 按计数显隐、请求头页脚恒挂非 mono）；`publish.go` 的 `publishPane` 重写为 sF 堆叠（MaxWidth 512 gap 12：intro 12/1.625、开关卡=整卡 CheckboxBase radius 6 px-3 py-2.5 gap 10、路径名 iF（eyebrow/32px mono 14 输入 + outline sm 自动生成钮，暗色走 input token）、Mock URL 条 h-40 muted/50（globe 14 text-ok + mono 11 + ghost xs 复制钮）、覆盖卡 mt-1 radius 6 border-border/60 bg-muted/30）。明暗 × 参数/请求头/Body=form/发布 八张截图对照通过，截图仅本地 temp 不入库。
 
 ### 推送链
 
+- 2026-11-10 收尾：迁移标注/知识库同步/待办入口/收尾交接 4 次提交（`6a1bb39` 起）已推送，`main` 与 `origin/main` 齐平；本仓库 native 开发冻结，后续在 Reqbox-go。
 - 2026-11-10 发版 0.1.2：版本号+CHANGELOG（966cf27）已推送，交接文档补批33记录后一并推送，`main` 与 `origin/main` 齐平。
 - 2026-11-10 交接：批26–32 八次（b651ba8…1550721）已推送，交接文档更新一次，推后 `git status -sb` 与 `origin/main` 齐平。
 - 2026-11-09 交接后已推送（用户「提交推送」）：批19–25 七次（3d244b2…282216a）+ 交接文档更新一次；推前 `git fetch` 比对过，远端无新提交，`git status -sb` 推后与 `origin/main` 齐平。批14–18 与批19–25 的分界：批 14–18 对齐请求框/标签条/Body/Auth（2026-11-07 已推），批 19–25 重做 KV 编辑器/发布/响应面板/历史/四对话框/环境管理器（本次推送）。
