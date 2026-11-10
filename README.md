@@ -1,10 +1,12 @@
 # mygo-example
 
-[mygo](https://github.com/egoist/mygo) 桌面框架的调研与示例：一个纯 Go、无 WebView 的原生 UI todo 桌面应用，附完整的调研知识库。
+[mygo](https://github.com/egoist/mygo) 桌面框架的调研与示例：纯 Go、无 WebView 的原生 UI 桌面应用（todo 与 Reqbox 迁移），附完整的调研知识库。
 
 ## 内容
 
 - [`todo-app/`](todo-app/) — todo 桌面应用（mygo 原生 UI 模式：增删、筛选、持久化、单实例、应用图标、NSIS 安装包）
+- [`reqbox-desktop/`](reqbox-desktop/) — Reqbox 桌面版路线 A：webview 复用（Go 后端 + 原 React 前端）
+- [`reqbox-native/`](reqbox-native/) — Reqbox 桌面版路线 B：mygo 原生 UI 重写（2026-11-10 迁至独立仓库 [Reqbox-go](https://github.com/iamartinlong/Reqbox-go)，此处仅作对照）
 - [`docs/`](docs/README.md) — 知识库（按用途分类）：
   - [01-research](docs/01-research/) — mygo 调研报告、原生 UI API 速查
   - [02-guides](docs/02-guides/) — todo 应用构建/运行/打包指南
@@ -26,7 +28,9 @@ go test ./...   # 存储层测试
 go run ./cmd/mygo build ../../todo-app
 ```
 
-## 产物数据
+Reqbox 原生版已迁至 [Reqbox-go](https://github.com/iamartinlong/Reqbox-go)（2026-11-10）；本仓库的 `reqbox-native/` 目录仅作历史对照。
+
+## 产物数据（todo-app）
 
 | 构建 | 体积 |
 |---|---|

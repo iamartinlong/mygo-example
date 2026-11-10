@@ -22,7 +22,7 @@
 - **旧版不可升级**：不带 `updates` 配置构建的版本（v0.1.1）`Updater.Enabled()` 为 false，永远收不到更新——更新能力必须从首个发布版本就带上
 - mygo 安装器是 per-user（%LOCALAPPDATA%\Programs 或用户自选目录），自更新写权限天然满足
 - `-upload` 需要 gh CLI；本机无 gh，REST API 手动上传等价可行（manifest 最后传）
-- 应用侧 UI 自己实现（菜单加速键 Ctrl+U + `mygo.Updater.Check/Install` + `App.Relaunch`），没用 updater 插件的现成窗口——插件窗口同样可用，为可自动化选了自绘
+- 应用侧 UI 自己实现（菜单加速键 Ctrl+U + `mygo.Updater.Check/Install` + `App.Relaunch`），没用 updater 插件的现成窗口——插件窗口同样可用（reqbox-native 已用，见第四轮），todo 为可自动化选了自绘
 - 运行时 `App.Version()` 由 `mygo build` 注入；`go build` dev 运行为空，需兜底显示
 
 ## 第二轮：v0.3.0（2026-11-05）
@@ -56,6 +56,25 @@
 | 漂移是否残留 | ✅ 无：安装后 exe 与本地官方 0.3.1 构建 **SHA-256 逐字节一致** |
 
 **结论**：更新器没有把 delta 盲打在被改动的基座上（否则 bsdiff 输出哈希必不匹配 manifest），整包回退/基座校验路径真实生效。中间过程（先试 delta 再回退，还是先校验基座直接走整包）从外部不可观测，以终态为准。
+
+## 第四轮：reqbox-native v0.1.1→v0.1.2——updater 插件窗口（2026-11-10）
+
+reqbox-native（mygo 原生 UI 重写的 Reqbox）用的是 `updater.Plugin` 的现成窗口（todo 为自绘 UI），这轮验证插件窗口的完整升级路径。0.1.2 是维护版（功能与 0.1.1 相同），专为打通 delta 而发。
+
+| 环节 | 结果 |
+|---|---|
+| `mygo build`（0.1.2） | ✅ 首次因匿名 GitHub API 配额耗尽没有 delta（日志 `403 Forbidden`，构建照常成功）；设 `GH_TOKEN` 重建后生成 0.1.1→0.1.2 delta **22KB**（整包 9.0MB） |
+| GitHub release（REST API） | ✅ id 439815347，6 资产（tar.gz/delta/安装器/install.ps1/SHA256SUMS/manifest 最后），`make_latest=false`，仓库 latest 保持 v0.3.1 |
+| 安装版 0.1.1 启动 | ✅ 10s 后自动检查到 0.1.2，插件窗口「软件更新」显示版本与 CHANGELOG 摘要 |
+| 点「安装更新」 | ✅ 进度窗 → 旧进程退出、新进程启动；exe VersionInfo=0.1.2，请求数据与主题保留 |
+| 是否走 delta | ✅ 旧进程 stderr 无 `downloading the whole update, as its delta update failed`（只有语言提示），按 `installUpdate` 的分支即走 delta |
+
+**新坑**（细节见 pitfalls「发布与更新」）：
+
+- 构建期 delta 预检走**匿名** GitHub API（60/h）；配额耗尽时 `mygo build` 只打印 `No delta updates ... 403` 并继续出包。设 `GH_TOKEN`/`GITHUB_TOKEN`（mygo v0.7.4 会给 api.github.com 请求加 Bearer）即可提到 5000/h，或等配额重置。
+- **draft release 不能按 tag 查**：`GET /releases/tags/<tag>` 对 draft 返回 404；用创建响应里的 `id` 上传资产并 PATCH 发布。
+- 插件窗口是独立 webview 窗口（标题随语言，如「软件更新」）；点安装后窗口缩成进度条视图，属正常。
+- 证据判定：`installUpdate` 只在 delta 失败时打 `log.Printf("mygo: downloading the whole update...")`；旧进程 stderr 无此行 + 升级成功 = delta 生效。
 
 ## 遗留
 

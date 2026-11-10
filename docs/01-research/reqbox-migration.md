@@ -131,7 +131,7 @@ mygo.NewWindow(mygo.WindowOptions{URL: "/"})
 
 每批完成 = 编译 + 真机运行 + 截图与 web 版同面板对照 + 提交。
 
-## 九、交接点（2026-11-10，批19–33 完成）
+## 九、交接点（2026-11-10，批19–34 完成）
 
 目标：把参数/请求头 KV 编辑器与发布面板按 web 基线重做（批15–18 已把请求框、标签条、Body/Auth 对齐）。**批19 已完成**：`reqbar.go` 的 `kvEditor` 重写为 tF 网格（eyebrow 表头 + border/60 发丝线、24/1fr/1.4fr/32 列 + gap 8、行高 32 radius 4、未启用整行 Opacity(0.45)、14px 复选框、28px mono 14 输入框无框/hover border/60/聚焦 border、hover 显 trash 14 删除钮 24×24、空态虚线 h-16 与非空小按钮 `mt-1.5` 双态、参数页脚 mono 10.5 按计数显隐、请求头页脚恒挂非 mono）；`publish.go` 的 `publishPane` 重写为 sF 堆叠（MaxWidth 512 gap 12：intro 12/1.625、开关卡=整卡 CheckboxBase radius 6 px-3 py-2.5 gap 10、路径名 iF（eyebrow/32px mono 14 输入 + outline sm 自动生成钮，暗色走 input token）、Mock URL 条 h-40 muted/50（globe 14 text-ok + mono 11 + ghost xs 复制钮）、覆盖卡 mt-1 radius 6 border-border/60 bg-muted/30）。明暗 × 参数/请求头/Body=form/发布 八张截图对照通过，截图仅本地 temp 不入库。
 
@@ -182,7 +182,7 @@ KV 编辑器：
 
 ### 剩余步骤（按序）
 
-批19–33 均已落地（批19–28 见各批记录；批29：侧栏树与空态按 web 重建；批30：打包与更新链；批31：暗色窗框白边修复；批32：发版 reqbox-native-v0.1.1；批33：发版 v0.1.2——首个 delta 与安装版 0.1.1→0.1.2 增量升级 E2E 闭环）。留给后续的已知差距：
+批19–34 均已落地（批19–28 见各批记录；批29：侧栏树与空态按 web 重建；批30：打包与更新链；批31：暗色窗框白边修复；批32：发版 reqbox-native-v0.1.1；批33：发版 v0.1.2——首个 delta 与安装版 0.1.1→0.1.2 增量升级 E2E 闭环；批34：reqbox-native 迁出独立仓库 Reqbox-go）。留给后续的已知差距：
 
 - ~~保存按钮偶发不响应~~ **批26 已定位并修复**：真实 bug——新环境态 Save 被 `envEditID != ""` 条件块藏掉（web 无条件渲染 Save，仅删除依 env 存在），叠加调试期红底 sed 误删按钮的 primary 背景导致 Save 隐形；两处已修，新建→保存→列表出现→删除→编辑器清空全链真机闭环。
 - ~~响应面板长文编辑器固定高~~ **批27 已改自增长+面板滚动**（$P 边框框 + 行数算高）。剩余近似：历史重放的请求头/请求体来自快照（替换前的草稿）而非 web history API 存的实际发送值；等待骨架无 pulse 动画（mygo 无对应动画）。
@@ -192,6 +192,14 @@ KV 编辑器：
 - 历史重放的请求头/请求体近似：需扩展共享 store 的 history 表（影响双端 DB schema），单独评估后再动。
 - 等待骨架无 pulse 动画（mygo 有动画能力，可按需实现）。
 - web 用 `crypto.randomUUID()`，原生用 8 字节随机 hex 作 KV id——格式不同但都是唯一串，库间互换无碍，别当缺陷改。
+
+### 批34 记录（reqbox-native 迁出独立仓库 Reqbox-go，2026-11-10）
+
+- **目标**：`https://github.com/iamartinlong/Reqbox-go`（原为空仓库）。按用户选择用**全新初始提交**（不搬 37 条历史），旧目录保留并标注迁移。
+- **搬迁内容**：`reqbox-native/` 全部 49 个跟踪文件（源码/图标/字体/mygo.json/CHANGELOG）+ `reqbox-desktop/pkg/store`、`pkg/runner` 内联到新仓库 `pkg/`；模块路径改为 `github.com/iamartinlong/Reqbox-go`，导入同步替换，删除 `replace reqbox-desktop`。
+- **版本与更新源**：新仓库继续 0.1.2；`mygo.json` 的 `updates.github` 改为 `iamartinlong/Reqbox-go`、`tagPrefix` 改 `v`（独立仓库用 `releases/latest`）。**存量 0.1.2 及更早安装版的 feed 仍指向旧仓库，需手动安装一次新仓库版本**，之后自动更新。
+- **验证**：新仓库 `go mod tidy`（依赖钉在与 0.1.2 相同的版本：sqlite v1.39.1、x/sys v0.48.0）、`go build ./...`、`go vet ./...`、`go test ./...` 全过（store/runner 测试通过）；初始提交 `df94600` 已推送 `main`（远端 HEAD 与 raw `mygo.json` 已核对）。
+- **注意**：`pkg/store`、`pkg/runner` 自此有两份（旧仓库 reqbox-desktop 一份、新仓库一份），共享逻辑改动要双向同步；或后续把旧仓库 webview 版改为依赖新仓库模块（未做，待评估）。`reqbox-native/README.md` 已标注迁出。
 
 ### 批33 记录（发版 reqbox-native-v0.1.2：首个 delta 与增量升级 E2E）
 
@@ -213,7 +221,7 @@ KV 编辑器：
 - **E2E（已闭环，2026-11-10 复核）**：23:53 的首次验证因匿名配额仍有残留而失败（`updater.json` 保持 `{}`）。跨夜后配额恢复：盘上安装版 exe 已为 **0.1.1**（`updater.json` 记录 02:54 与 06:51 两次成功检查——升级在哪一步完成无法从记录区分，可能为更新窗点击或手动安装，但**最终状态已验证**）；06:51 本次启动的检查成功且无待装更新（已是最新），启动画面确认 0.1.1 UI 正常。教训：GitHub 匿名 API 60/h，构建查 delta + 发布调用 + 排障时的 `rate_limit` 查询都会消耗——验证升级前**不要**再打 api.github.com。本地自建 feed 的方案试过但 mygo 构建期强制 `updates.url` 为 https（运行期才对 loopback 放行），未采用。
 
 **踩坑**：
-- `updater.json` 为 `{}` 不代表"没检查"——检查失败不落盘、成功才写 `LastCheck`；判断检查是否成功看该字段。
+- `updater.json` 为 `{}` 不代表"没检查"——检查失败不写 `LastCheck`（状态文件可能仍为 `{}`），成功才写；判断检查是否成功看该字段。
 - release 的 `target_commitish` 要给完整 commit hash（截断的短 hash 会 422）。
 - 中文/长 release notes 走 UTF-8 文件 + `node -e` 生成 JSON + `--data-binary @file`，避开命令行编码坑（沿用既有教训）。
 ### 批31 记录（暗色窗框白边修复）

@@ -78,6 +78,31 @@
 - **原因**：PS 5.1 双引号字符串里 `?` 可以作为变量名字符，`$up?` 被当成一个（不存在的）变量
 - **解法**：插值一律用花括号：`"${up}?name=${f}"`；含 `$` 的 PowerShell 命令不要写在 bash 双引号里（会被 bash 先吞一层），存成 .ps1 文件执行
 
+## 发布与更新
+
+### `mygo build` 没有 delta：匿名 GitHub API 配额耗尽
+
+- **现象**：构建成功，日志却是 `No delta updates for windows-amd64: GET https://api.github.com/...: 403 Forbidden`
+- **原因**：增量包预检要读 GitHub Releases（匿名 60 请求/小时/IP），当天配额可能已被应用更新检查、发布调用耗光
+- **解法**：构建时设 `GH_TOKEN`（或 `GITHUB_TOKEN`）——mygo v0.7.4 会给 api.github.com 请求加 `Authorization: Bearer`，配额升到 5000/h；或等配额重置
+
+### draft release 按 tag 查不到
+
+- **现象**：`GET /repos/{owner}/{repo}/releases/tags/{tag}` 对刚创建的 draft 返回 404
+- **原因**：tag 在发布（`draft=false`）时才可见/创建
+- **解法**：用创建 release 响应里的 `id` 上传资产并 PATCH 发布；发布后再按 tag 查
+
+### `updater.json` 为 `{}` 不代表没检查
+
+- **现象**：检查失败后状态文件仍是 `{}`，误以为应用没执行检查
+- **原因**：更新器只在**成功**检查后写 `lastCheck`；失败时状态文件照存，但 `lastCheck` 不变（失败时间只在内存，最多 1 小时后重试）
+- **解法**：看 `lastCheck` 是否更新；结合启动后首个检查固定 10s（`firstCheckWait`）判断时序
+
+### 更新窗口的点击自动化
+
+- **现象**：`updater.Plugin` 的窗口是独立 webview 窗口，主窗口句柄抓不到
+- **解法**：按进程枚举顶层窗口（`EnumWindows` + `GetWindowThreadProcessId`）取标题与矩形；被遮挡时用 `PrintWindow`（`PW_RENDERFULLCONTENT`）截图，不必置前；坐标按 DPI 缩放换算，点一次即可（随后窗口缩成进度条视图是正常状态）
+
 ## 验证方法
 
 ### 截图验证窗口渲染
@@ -89,3 +114,9 @@ taskkill //IM todo-app.exe //F
 ```
 
 注意：全屏截图包含桌面其他内容（浏览器等个人信息），不要提交进仓库。
+
+### Git Bash 的 `/tmp` 与 Node 的 `/tmp` 不是同一目录
+
+- **现象**：node 写 `/tmp/x.json` 后，curl `@/tmp/x.json` 报读不到文件
+- **原因**：Git Bash 把 `/tmp` 映射到 `%TEMP%`，而 Windows 版 Node 把 `/tmp` 解释为 `C:\tmp`
+- **解法**：两边共用的临时路径用 `cygpath -m /tmp` 取 `C:/...` 形式再传给 node 与 curl；或统一用 `$TEMP` 的 Windows 路径
